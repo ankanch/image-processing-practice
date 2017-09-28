@@ -9,6 +9,17 @@
 
 #define ALLOW_DEBUG_MSG true
 
+/*************************************************************************\
+*                                                                        *\   
+*                           Text Extractor                               *\
+*           This can help to to split alphaberts from an image.          *\
+*                    by Kanch at http://akakanch.com                     *\
+*                         kanchisme@gmail.com                            *\
+*                                                                        *\
+*                                                                        *\
+*************************************************************************\/
+
+/* Basic types */
 typedef uint8_t BASE;
 typedef BASE*** MATRIX;
 typedef BASE** ROW;
@@ -17,12 +28,14 @@ typedef BASE* PIXEL;
 typedef BASE CHANNEL;
 typedef MATRIX  IMAGE;
 
+/* struct stores image basic information */
 struct ImageData{
     int width;
     int height;
     int channel;
 };
 
+/* struct stores image matrix and its basic information */
 struct ImagePack{
     IMAGE image;
     ImageData properties;
@@ -30,7 +43,8 @@ struct ImagePack{
 
 /* ==============================================Helper Function============================================ */
 
-/*https://stackoverflow.com/questions/22774009/android-ndk-stdto-string-support*/
+/*Transfer anyvalue to string, for compatiable of Android app.
+source:https://stackoverflow.com/questions/22774009/android-ndk-stdto-string-support*/
 template <typename T>
 std::string to_string(T value)
 {
@@ -38,6 +52,9 @@ std::string to_string(T value)
     os << value ;
     return os.str() ;
 }
+
+/* used to display debug message, 
+you can turn it off by setting macro ALLOW_DEBUG_MSG to 0 */
 template <typename T>
 void klog(T msg,const bool newline=true){
     if(ALLOW_DEBUG_MSG){
@@ -48,13 +65,24 @@ void klog(T msg,const bool newline=true){
     }
 }
 
+/* Calucate average of a given array (row vector) */
 BASE avg(const PIXEL p,const uint8_t channels){
-    BASE sum = 0;
+    int sum = 0;
     for(int i=0;i<channels;i++){
         sum+=p[i];
     }
     return sum/channels;
 }
+/* sum up an array */
+long sum(const PIXEL p,const uint8_t channels){
+    long sum = 0;
+    for(int i=0;i<channels;i++){
+        sum+=p[i];
+    }
+    return sum;
+}
+
+
 
 /* save image to file */
 void save2File(const IMAGE image,const ImageData &id,const std::string des="image.txt"){
@@ -79,6 +107,47 @@ void save2File(const IMAGE image,const ImageData &id,const std::string des="imag
     fs.close();
 }
 
+/* perform mean normailize to pictures */
+const IMAGE normalize(IMAGE image,const ImageData& id){
+    long sumx = 0;
+    for(int i=0;i<id.height;i++){
+        for(int j=0;j<id.width;j++){
+            sumx += sum( image[i][j],id.channel );
+        }
+    }
+    BASE avgv = BASE(sumx/(id.height*id.width));
+    for(int i =0;i<id.height;i++){
+        for(int j=0;j<id.width;j++){
+            try{
+                image[i][j][0] -= avgv;
+            }catch(...){
+                klog(i,false);
+                klog(j,false);
+            }
+        }
+    }
+    return image;
+}
+
+/* this function can set all pixels which values large than a specified value to 1 */
+const IMAGE set_toOne(IMAGE image,const ImageData& id,const uint8_t threshold=0){
+    for(int i=0;i<id.height;i++){
+        for(int j=0;i<id.width;j++){
+            try{
+                klog(i,false);
+                klog(j,false);
+                if( image[i][j][0] >= threshold ){
+                        image[i][j][0] = 1;
+                }
+            }catch(...){
+                klog(i,false);
+                klog(j,false);
+            }
+        }
+    }
+    return image;
+}
+
 /* Tranfera row vector into a matrix */
 const IMAGE to_Martix(uint8_t* img,const ImageData & id){
     
@@ -89,7 +158,7 @@ const IMAGE to_Martix(uint8_t* img,const ImageData & id){
         for(int j=0;j<id.width;j++){
             PIXEL pixel = new CHANNEL[id.channel];
             for(int c=0;c<id.channel;c++){
-                pixel[c] = int(img[ i*id.width + j*id.width + c ]);
+                pixel[c] = int(img[ i*id.width + j +c ]);
             }
             row[j] = pixel;
         }
@@ -123,7 +192,20 @@ void extractText(uint8_t* img,const ImageData & id){
     const IMAGE image = to_Martix(img,id);
     klog("to grayscale image...");
     ImagePack grayscaleimgpack = to_grayScale(image,id);
-    save2File(grayscaleimgpack.image,grayscaleimgpack.properties,"image2.txt");
+    klog("normalizing...");
+    grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties);
+    klog("set to 1...");
+    grayscaleimgpack.image = set_toOne(grayscaleimgpack.image,grayscaleimgpack.properties);
+    klog("save normailed to file");
+    save2File(grayscaleimgpack.image ,grayscaleimgpack.properties,"normalized.txt");
+    klog("start scanning on y...");
+
+    klog("start scanning on x...");
+
+    klog("split sentence...");
+
+
+    klog("split alphaberts...");
     
     
 }
