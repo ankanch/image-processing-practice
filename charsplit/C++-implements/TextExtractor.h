@@ -6,18 +6,20 @@
 #include<iostream>
 #include<fstream>
 #include <sstream>
+#include <vector>
+#include <algorithm>
 
 #define ALLOW_DEBUG_MSG true
 
-/*************************************************************************\
-*                                                                        *\   
-*                           Text Extractor                               *\
-*           This can help to to split alphaberts from an image.          *\
-*                    by Kanch at http://akakanch.com                     *\
-*                         kanchisme@gmail.com                            *\
-*                                                                        *\
-*                                                                        *\
-*************************************************************************\/
+/*****************************************************************************\
+***                                                                        ***\   
+***                          Text Extractor                                ***\
+***           This can help to to split alphaberts from an image.          ***\
+***                    by Kanch at http://akakanch.com                     ***\
+***                         kanchisme@gmail.com                            ***\
+***                                                                        ***\
+***                                                                        ***\
+******************************************************************************\
 
 /* Basic types */
 typedef uint8_t BASE;
@@ -25,8 +27,10 @@ typedef BASE*** MATRIX;
 typedef BASE** ROW;
 typedef BASE** COLUMN;
 typedef BASE* PIXEL;
+typedef BASE* ALPHABERTS;
 typedef BASE CHANNEL;
 typedef MATRIX  IMAGE;
+typedef std::vector<int> LIST;
 
 /* struct stores image basic information */
 struct ImageData{
@@ -40,6 +44,7 @@ struct ImagePack{
     IMAGE image;
     ImageData properties;
 };
+typedef std::vector<ImagePack> LISTIMAGEPACK;
 
 /* ==============================================Helper Function============================================ */
 
@@ -107,6 +112,23 @@ void save2File(const IMAGE image,const ImageData &id,const std::string des="imag
     fs.close();
 }
 
+/* print Matrix to console */
+void printMatrix(const MATRIX mat,const ImageData&id){
+    std::cout<<"[";
+    for(int i =0;i<id.height;i++){
+        std::cout<<"[";
+        for(int j=0;j<id.width;j++){
+            std::cout<<"[";
+            for(int c=0;c<id.channel;c++){
+                std::cout<< int(mat[i][j][c]) <<",";
+            }
+            std::cout<<"\b] " ;
+        }
+        std::cout<<"\b] "<<std::endl;
+    }
+    std::cout<<"]"<<std::endl;
+}
+
 /* perform mean normailize to pictures */
 const IMAGE normalize(IMAGE image,const ImageData& id){
     long sumx = 0;
@@ -130,19 +152,23 @@ const IMAGE normalize(IMAGE image,const ImageData& id){
 }
 
 /* this function can set all pixels which values large than a specified value to 1 */
-const IMAGE set_toOne(IMAGE image,const ImageData& id,const uint8_t threshold=0){
+const IMAGE set_largeThan2Value(IMAGE image,const ImageData& id,const uint8_t value,const int threshold){
     for(int i=0;i<id.height;i++){
-        for(int j=0;i<id.width;j++){
-            try{
-                klog(i,false);
-                klog(j,false);
-                if( image[i][j][0] >= threshold ){
-                        image[i][j][0] = 1;
+        for(int j=0;j<id.width;j++){
+                if( int(image[i][j][0]) > threshold ){
+                        image[i][j][0] = value;
                 }
-            }catch(...){
-                klog(i,false);
-                klog(j,false);
-            }
+        }
+    }
+    return image;
+}
+/* this function can set all pixels which values less than a specified value to 1 */
+const IMAGE set_lessThan2Value(IMAGE image,const ImageData& id,const uint8_t value,const int threshold){
+    for(int i=0;i<id.height;i++){
+        for(int j=0;j<id.width;j++){
+                if( int(image[i][j][0]) <= threshold ){
+                        image[i][j][0] = value;
+                }
         }
     }
     return image;
@@ -165,6 +191,66 @@ const IMAGE to_Martix(uint8_t* img,const ImageData & id){
         mat[i] = row;
     }
     return mat;
+}
+
+/* get a slice of an matrix, like a[:,:] in Python */
+/* return `nullptr` if invailed data dectected */
+/* double nagative value in row or column stands for all select all rows and columns  */
+const MATRIX sliceSubMatrix3D(MATRIX mat,const ImageData&id,const int rs=0,const int re=0,const int cs=0,const int ce=0){
+    int row_start,row_end,col_start,col_end;
+    row_start = rs;
+    row_end = re;
+    col_start = cs;
+    col_end = ce;
+
+    if( rs > re || cs > ce || ( (rs>=0)^(re>=0) ) || ( (cs>=0)^(ce>=0) ) ){
+        return nullptr;
+    }
+    if( row_end < 0 && row_start < 0 ){     // all rows
+        row_start = 0;
+        row_end = id.height;
+    }
+    if( col_end < 0 && col_start < 0 ){     // all columns
+        col_start = 0;
+        col_end = id.width;
+    }
+    int height = row_end - row_start;
+    int width = col_end - col_start;
+    MATRIX submatrix = new COLUMN[height];
+    //klog("height:" + to_string(height)+ "\twidth:" + to_string(width));
+    int colbase = 0;
+    for(int i=0;i<id.height;i++){
+        if( i >= row_start && i < row_end){
+            //klog("in row " + to_string(i));
+            ROW row = new PIXEL[width];
+            int base = 0;
+            for(int j=0;j<id.width;j++){
+                if( j >=col_start && j < col_end  ){
+                    //klog("col-"+to_string(j));
+                    PIXEL pixel = new BASE[id.channel];
+                    for(int c=0;c<id.channel;c++){
+                        pixel[c] = mat[i][j][c];
+                    }
+                    row[base] = pixel;
+                    base++;
+                }
+            }
+            submatrix[colbase] = row;
+            colbase++;
+        }
+    }
+    return submatrix;
+}
+
+/* Delete resource taken up by matrix */
+void deleteMatrix(MATRIX mat,const ImageData& id){
+    for(int i=0;i<id.height;i++){
+        for(int j=0;j<id.width;j++){
+            delete[] mat[i][j];
+        }
+        delete[] mat[i];
+    }
+    delete[] mat;
 }
 
 /* Grayscale an image */
@@ -192,20 +278,57 @@ void extractText(uint8_t* img,const ImageData & id){
     const IMAGE image = to_Martix(img,id);
     klog("to grayscale image...");
     ImagePack grayscaleimgpack = to_grayScale(image,id);
-    klog("normalizing...");
-    grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties);
+    save2File(grayscaleimgpack.image ,grayscaleimgpack.properties,"grayscale.txt");
     klog("set to 1...");
-    grayscaleimgpack.image = set_toOne(grayscaleimgpack.image,grayscaleimgpack.properties);
+    grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,200);
+    grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,200);
     klog("save normailed to file");
     save2File(grayscaleimgpack.image ,grayscaleimgpack.properties,"normalized.txt");
     klog("start scanning on y...");
-
+    int *ones_on_y = new int[grayscaleimgpack.properties.height];
+    for(int i=0;i<grayscaleimgpack.properties.height;i++){
+        int buf = 0;
+        for(int j=0;j<grayscaleimgpack.properties.width;j++){
+            buf += grayscaleimgpack.image[i][j][0];
+        }
+        ones_on_y[i] = buf;
+    }
+    klog("split line...");
+    LIST sentence_boundary;
+    int start,end;
+    for(int i=0;i<grayscaleimgpack.properties.height-1;i++){
+        //klog("ones_on_y="+to_string(ones_on_y[i])+"\t@"+to_string(i));
+        if( ( ones_on_y[i] == 0) && (ones_on_y[i+1] > 0) ){ //top boundary of sentence
+            start = i;
+        }else if((ones_on_y[i] > 0) && (ones_on_y[i+1] == 0)){   // bottom boundary of sentence
+            end = i+1;
+            sentence_boundary.push_back(start);
+            sentence_boundary.push_back(end);
+        }
+    }
+    int linecount = sentence_boundary.size()/2;
+    klog("linecout="+to_string(linecount) + "\tsb.size()="+to_string(sentence_boundary.size()));
+    LISTIMAGEPACK sentences;
+    for(int i=0;i<linecount;i++){
+        ImagePack im;
+        im.image = sliceSubMatrix3D(grayscaleimgpack.image,grayscaleimgpack.properties,
+                                    sentence_boundary[i],sentence_boundary[2*i+1],-1,-1);
+        im.properties.width = grayscaleimgpack.properties.width;
+        im.properties.height = sentence_boundary[2*i+1] - sentence_boundary[i];
+        im.properties.channel = 1;
+        sentences.push_back(im);
+        klog("line split.");
+        //printMatrix(im.image,im.properties);
+    }
     klog("start scanning on x...");
-
-    klog("split sentence...");
+    klog("split line alphaberts...");
 
 
     klog("split alphaberts...");
     
     
+    klog("deleting resource...");
+    delete[] ones_on_y;
+    deleteMatrix(image,id);
+    deleteMatrix(grayscaleimgpack.image,grayscaleimgpack.properties);
 }
