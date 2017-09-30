@@ -5,9 +5,6 @@
 using namespace std;
 
 
-
-
-
 int main(int argc,char**argv){
     cout<<">>Reading image"<<endl;
     int width, height, bpp;
@@ -19,6 +16,12 @@ int main(int argc,char**argv){
     klog(height);
     klog(bpp);
     IMAGE image =  to_Martix(rgb_image,a);
+    IMAGE subimage = sliceSubMatrix3D(image,a,50,60,90,100);
+    ImageData b = {10,10,1};
+    ImagePack2D i2d = depixelize(subimage,b);
+    printMatrix(nullptr,i2d.properties,i2d.image);
+    string npstr = numpylize(nullptr,i2d.properties,i2d.image);
+    save_string(npstr,"numpylizestr.txt");
     klog("saving to image.txt...");
     save2File( image,a);
     extractText(rgb_image,a);

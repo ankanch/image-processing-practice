@@ -32,6 +32,9 @@ typedef BASE CHANNEL;
 typedef MATRIX  IMAGE;
 typedef std::vector<int> LIST;
 
+typedef ROW IMAGE2D;
+typedef PIXEL ROW2D;
+
 /* struct stores image basic information */
 struct ImageData{
     int width;
@@ -44,7 +47,12 @@ struct ImagePack{
     IMAGE image;
     ImageData properties;
 };
+struct ImagePack2D{
+    IMAGE2D image;
+    ImageData properties;
+};
 typedef std::vector<ImagePack> LISTIMAGEPACK;
+typedef std::vector<ImagePack2D> LISTIMAGEPACK2D;
 
 /* ==============================================Helper Function============================================ */
 
@@ -113,18 +121,31 @@ void save2File(const IMAGE image,const ImageData &id,const std::string des="imag
 }
 
 /* print Matrix to console */
-void printMatrix(const MATRIX mat,const ImageData&id){
+/* can print pixelize and depixelize */
+void printMatrix(const MATRIX mat3d,const ImageData&id,const IMAGE2D mat2d=nullptr){
     std::cout<<"[";
-    for(int i =0;i<id.height;i++){
-        std::cout<<"[";
-        for(int j=0;j<id.width;j++){
+    if(id.channel > 0){
+        MATRIX mat = mat3d;
+        for(int i =0;i<id.height;i++){
             std::cout<<"[";
-            for(int c=0;c<id.channel;c++){
-                std::cout<< int(mat[i][j][c]) <<",";
+            for(int j=0;j<id.width;j++){
+                std::cout<<"[";
+                for(int c=0;c<id.channel;c++){
+                    std::cout<< int(mat[i][j][c]) <<",";
+                }
+                std::cout<<"\b] " ;
             }
-            std::cout<<"\b] " ;
+            std::cout<<"\b] "<<std::endl;
         }
-        std::cout<<"\b] "<<std::endl;
+    }else{
+        IMAGE2D mat = mat2d;
+        for(int i =0;i<id.height;i++){
+            std::cout<<"[";
+            for(int j=0;j<id.width;j++){
+                std::cout<< int(mat[i][j]) <<",";
+            }
+            std::cout<<"\b] "<<std::endl;
+        }  
     }
     std::cout<<"]"<<std::endl;
 }
@@ -269,7 +290,69 @@ const ImagePack to_grayScale(const IMAGE image,const ImageData& id){
     ImagePack result = {grayscale,{id.width,id.height,1}};
     return result;
 }
+/* make pixel in image from a array to single BASE variable */
+const ImagePack2D depixelize(const IMAGE image,const ImageData& id){
+    ImagePack2D i2d;
+    i2d.properties.width = id.width;
+    i2d.properties.height = id.height;
+    i2d.properties.channel = 0;
+    if(id.channel != 1){
+        i2d.image = nullptr;
+        return i2d;
+    }
+    IMAGE2D buf = new ROW2D[id.height];
+    for(int i=0;i<id.height;i++){
+        ROW2D row = new BASE[id.width];
+        for(int j=0;j<id.width;j++){
+            row[j] = image[i][j][0];
+            //klog(int(row[j]),false);
+        }
+        buf[i] = row;
+    }
+    i2d.image = buf;
+    return i2d;
+}
 
+/* make an matrix avaliable to show as image in python */
+const std::string numpylize(const IMAGE mat3d,const ImageData& id,const IMAGE2D mat2d=nullptr){
+    klog("numpylizing...");
+    std::string numpylizedstring = "";
+    if(id.channel > 0){
+        MATRIX mat = mat3d;
+        for(int i =0;i<id.height;i++){
+            numpylizedstring += "[";
+            for(int j=0;j<id.width;j++){
+                numpylizedstring += "[";
+                for(int c=0;c<id.channel;c++){
+                    numpylizedstring += to_string(int(mat[i][j][c])) + ",";
+                }
+                numpylizedstring = numpylizedstring.substr(0,numpylizedstring.length() - 1 ) + "],";
+            }
+            numpylizedstring = numpylizedstring.substr(0,numpylizedstring.length() - 1 ) + "],";
+        }
+    }else{
+        IMAGE2D mat = mat2d;
+        for(int i =0;i<id.height;i++){
+            numpylizedstring += "[";
+            for(int j=0;j<id.width;j++){
+                numpylizedstring += to_string(int(mat[i][j])) + ",";
+            }
+            numpylizedstring = numpylizedstring.substr(0,numpylizedstring.length() - 1 ) + "],";
+        }  
+    }
+    numpylizedstring = "[" + numpylizedstring.substr(0,numpylizedstring.length() - 1 ) + "]";
+    return numpylizedstring;
+}
+
+/* save string to file */
+void save_string(const std::string data,const std::string path){
+    klog("saving string...",false);
+    std::fstream fs;
+    fs.open(path.c_str(),std::ios_base::out);
+    fs<<data;
+    fs.close();
+    klog(".done.");
+}
 
 /* ==============================================Extract text fucntion here================================== */
 
@@ -278,6 +361,8 @@ void extractText(uint8_t* img,const ImageData & id){
     const IMAGE image = to_Martix(img,id);
     klog("to grayscale image...");
     ImagePack grayscaleimgpack = to_grayScale(image,id);
+    ImagePack2D a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
+    save_string(numpylize(nullptr,a.properties,a.image),"numpylizestr.txt");
     save2File(grayscaleimgpack.image ,grayscaleimgpack.properties,"grayscale.txt");
     klog("set to 1...");
     grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,200);
