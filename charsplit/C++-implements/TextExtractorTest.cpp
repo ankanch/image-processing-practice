@@ -21,9 +21,7 @@ int main(int argc,char**argv){
     ImagePack2D i2d = depixelize(subimage,b);
     printMatrix(nullptr,i2d.properties,i2d.image);
     string npstr = numpylize(nullptr,i2d.properties,i2d.image);
-    save_string(npstr,"numpylizestr.txt");
-    klog("saving to image.txt...");
-    save2File( image,a);
+    save_string(npstr,"cache/numpylizestr.txt");
     extractText(rgb_image,a);
     cout<<">>width:"<<width<<"\theight:"<<height<<"\tbpp:"<<bpp<<endl;
     stbi_image_free(rgb_image);

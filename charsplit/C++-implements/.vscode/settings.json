@@ -37,6 +37,7 @@
         "xtr1common": "cpp",
         "list": "cpp",
         "algorithm": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "xmemory": "cpp"
     }
 }

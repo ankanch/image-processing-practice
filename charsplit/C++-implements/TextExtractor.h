@@ -1,3 +1,7 @@
+#ifndef DIGITSFINDER_TEXTEXTRACTOR_H
+#define DIGITSFINDER_TEXTEXTRACTOR_H
+
+#endif //DIGITSFINDER_TEXTEXTRACTOR_H
 #define STB_IMAGE_IMPLEMENTATION
 #include"stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -326,9 +330,11 @@ const std::string numpylize(const IMAGE mat3d,const ImageData& id,const IMAGE2D 
                 for(int c=0;c<id.channel;c++){
                     numpylizedstring += to_string(int(mat[i][j][c])) + ",";
                 }
-                numpylizedstring = numpylizedstring.substr(0,numpylizedstring.length() - 1 ) + "],";
+                numpylizedstring.pop_back();
+                numpylizedstring += "],";
             }
-            numpylizedstring = numpylizedstring.substr(0,numpylizedstring.length() - 1 ) + "],";
+            numpylizedstring.pop_back();
+            numpylizedstring += "],";
         }
     }else{
         IMAGE2D mat = mat2d;
@@ -337,11 +343,13 @@ const std::string numpylize(const IMAGE mat3d,const ImageData& id,const IMAGE2D 
             for(int j=0;j<id.width;j++){
                 numpylizedstring += to_string(int(mat[i][j])) + ",";
             }
-            numpylizedstring = numpylizedstring.substr(0,numpylizedstring.length() - 1 ) + "],";
+            numpylizedstring.pop_back();
+            numpylizedstring += "],";
         }  
     }
-    numpylizedstring = "[" + numpylizedstring.substr(0,numpylizedstring.length() - 1 ) + "]";
-    return numpylizedstring;
+    numpylizedstring.pop_back();
+    numpylizedstring += "]";
+    return "[" + numpylizedstring;
 }
 
 /* save string to file */
@@ -359,16 +367,16 @@ void save_string(const std::string data,const std::string path){
 void extractText(uint8_t* img,const ImageData & id){
     klog("converting to matrix...");
     const IMAGE image = to_Martix(img,id);
+    klog("saving matrix...");
+    save_string( numpylize(image,id) ,"cache/raw_image.txt");
     klog("to grayscale image...");
     ImagePack grayscaleimgpack = to_grayScale(image,id);
     ImagePack2D a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
-    save_string(numpylize(nullptr,a.properties,a.image),"numpylizestr.txt");
-    save2File(grayscaleimgpack.image ,grayscaleimgpack.properties,"grayscale.txt");
+    save_string(numpylize(nullptr,a.properties,a.image),"cache/numpylizestr.txt");
     klog("set to 1...");
     grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,200);
     grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,200);
     klog("save normailed to file");
-    save2File(grayscaleimgpack.image ,grayscaleimgpack.properties,"normalized.txt");
     klog("start scanning on y...");
     int *ones_on_y = new int[grayscaleimgpack.properties.height];
     for(int i=0;i<grayscaleimgpack.properties.height;i++){
