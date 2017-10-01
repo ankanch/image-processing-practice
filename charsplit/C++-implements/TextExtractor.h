@@ -57,6 +57,7 @@ struct ImagePack2D{
 };
 typedef std::vector<ImagePack> LISTIMAGEPACK;
 typedef std::vector<ImagePack2D> LISTIMAGEPACK2D;
+typedef std::vector<LISTIMAGEPACK> DLISTIMAGEPACK;
 
 /* ==============================================Helper Function============================================ */
 
@@ -156,7 +157,7 @@ void printMatrix(const MATRIX mat3d,const ImageData&id,const IMAGE2D mat2d=nullp
 
 /* perform mean normailize to pictures */
 const IMAGE normalize(IMAGE image,const ImageData& id){
-    long sumx = 0;
+    long long sumx = 0;
     for(int i=0;i<id.height;i++){
         for(int j=0;j<id.width;j++){
             sumx += sum( image[i][j],id.channel );
@@ -180,7 +181,7 @@ const IMAGE normalize(IMAGE image,const ImageData& id){
 const IMAGE set_largeThan2Value(IMAGE image,const ImageData& id,const uint8_t value,const int threshold){
     for(int i=0;i<id.height;i++){
         for(int j=0;j<id.width;j++){
-                if( int(image[i][j][0]) > threshold ){
+                if( int(image[i][j][0]) >= threshold ){
                         image[i][j][0] = value;
                 }
         }
@@ -286,7 +287,8 @@ const ImagePack to_grayScale(const IMAGE image,const ImageData& id){
     for(int i=0;i<id.height;i++){
         ROW row = new PIXEL[id.width];
         for(int j=0;j<id.width;j++){
-            PIXEL p = new CHANNEL[1]{ avg( image[i][j] , id.channel ) };
+            long buf =  (image[i][j][0]*299 + image[i][j][1]*587 + image[i][j][2]*114 + 500) / 1000;
+            PIXEL p = new CHANNEL[1]{ BASE(buf) };
             row[j] = p;
         }
         grayscale[i] = row;
@@ -364,7 +366,7 @@ void save_string(const std::string data,const std::string path){
 
 /* ==============================================Extract text fucntion here================================== */
 
-void extractText(uint8_t* img,const ImageData & id){
+DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     klog("converting to matrix...");
     const IMAGE image = to_Martix(img,id);
     klog("saving matrix...");
@@ -374,15 +376,21 @@ void extractText(uint8_t* img,const ImageData & id){
     ImagePack2D a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
     save_string(numpylize(nullptr,a.properties,a.image),"cache/numpylizestr.txt");
     klog("set to 1...");
-    grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,200);
-    grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,200);
+    grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties);
+    grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,50);
+    grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,185);
+    klog("save normailzed picture...");
+    a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
+    save_string(numpylize(nullptr,a.properties,a.image),"cache/normalized.txt");
     klog("save normailed to file");
     klog("start scanning on y...");
     int *ones_on_y = new int[grayscaleimgpack.properties.height];
     for(int i=0;i<grayscaleimgpack.properties.height;i++){
         int buf = 0;
         for(int j=0;j<grayscaleimgpack.properties.width;j++){
-            buf += grayscaleimgpack.image[i][j][0];
+            if(grayscaleimgpack.image[i][j][0] > 0){
+               ++buf;
+            }
         }
         ones_on_y[i] = buf;
     }
@@ -411,17 +419,52 @@ void extractText(uint8_t* img,const ImageData & id){
         im.properties.channel = 1;
         sentences.push_back(im);
         klog("line split.");
-        //printMatrix(im.image,im.properties);
+        ImagePack2D d2line = depixelize(im.image,im.properties);
+        save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/line" + to_string(i+1) + ".txt");
     }
     klog("start scanning on x...");
-    klog("split line alphaberts...");
+    DLISTIMAGEPACK alphaberts;
+    for(int i =0;i<sentences.size();i++){
+        LISTIMAGEPACK alpha;
+        klog("scan on sentence... on line " + to_string(i+1));
+        ImagePack sen = sentences[i];
+        LIST zeros_on_sentence;
+        for(int j=0;j<sen.properties.width;j++ ){
+            int buf=0;
+            for(int c=0;c<sen.properties.height;c++){
+                if(sen.image[c][j][0] > 0){
+                    ++buf;
+                }
+            }
+            zeros_on_sentence.push_back(buf);
+        }
+        klog("split line alphaberts....");
+        start = end = 0;
+        klog("\tsb.size()="+to_string(zeros_on_sentence.size()));
+        for(int j=0;j<zeros_on_sentence.size();j++){
+            if( ( zeros_on_sentence[j] == 0) && (zeros_on_sentence[j+1] > 0) ){ //top boundary of sentence
+                start = j;
+            }else if((zeros_on_sentence[j] > 0) && (zeros_on_sentence[j+1] == 0)){   // bottom boundary of sentence
+                end = j+1;
+                //klog("scling... start:" + to_string(start) + "\tend:" + to_string(end) );
+                IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
+                ImagePack imp = {imx,{end-start,sen.properties.height,1}};
+                //printMatrix(imp.image,imp.properties);
+                //klog("depixelize");
+                ImagePack2D d2line = depixelize(imp.image,imp.properties);
+                //klog("saving");
+                save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp_"+ to_string(i+1) + to_string(j+1) + ".txt");
+                alpha.push_back(imp);
+            }
+        }
+        alphaberts.push_back(alpha);
+    }
 
-
-    klog("split alphaberts...");
-    
-    
+    //delete resource
     klog("deleting resource...");
     delete[] ones_on_y;
     deleteMatrix(image,id);
     deleteMatrix(grayscaleimgpack.image,grayscaleimgpack.properties);
+
+    return alphaberts;
 }
