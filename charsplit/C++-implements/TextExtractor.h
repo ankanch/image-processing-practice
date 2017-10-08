@@ -413,16 +413,15 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     for(int i=0;i<linecount;i++){
         ImagePack im;
         im.image = sliceSubMatrix3D(grayscaleimgpack.image,grayscaleimgpack.properties,
-                                    sentence_boundary[i],sentence_boundary[2*i+1],-1,-1);
+                                    sentence_boundary[2*i],sentence_boundary[2*i+1],-1,-1);
         im.properties.width = grayscaleimgpack.properties.width;
-        im.properties.height = sentence_boundary[2*i+1] - sentence_boundary[i];
+        im.properties.height = sentence_boundary[2*i+1] - sentence_boundary[2*i];
         im.properties.channel = 1;
         sentences.push_back(im);
-        klog("line split.");
         ImagePack2D d2line = depixelize(im.image,im.properties);
         save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/line" + to_string(i+1) + ".txt");
     }
-    klog("start scanning on x...");
+    klog("Sentences list size=" + to_string(sentences.size()) + "\tstart scanning on x...");
     DLISTIMAGEPACK alphaberts;
     for(int i =0;i<sentences.size();i++){
         LISTIMAGEPACK alpha;
@@ -442,9 +441,9 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
         start = end = 0;
         klog("\tsb.size()="+to_string(zeros_on_sentence.size()));
         for(int j=0;j<zeros_on_sentence.size();j++){
-            if( ( zeros_on_sentence[j] == 0) && (zeros_on_sentence[j+1] > 0) ){ //top boundary of sentence
+            if( ( zeros_on_sentence[j] == 0) && (zeros_on_sentence[j+1] > 0) ){ //left boundary of alphaberts
                 start = j;
-            }else if((zeros_on_sentence[j] > 0) && (zeros_on_sentence[j+1] == 0)){   // bottom boundary of sentence
+            }else if((zeros_on_sentence[j] > 0) && (zeros_on_sentence[j+1] == 0)){   // right boundary of alplaberts
                 end = j+1;
                 //klog("scling... start:" + to_string(start) + "\tend:" + to_string(end) );
                 IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
