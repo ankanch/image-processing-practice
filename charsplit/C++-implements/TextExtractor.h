@@ -369,6 +369,35 @@ void save_string(const std::string data,const std::string path){
     }
 }
 
+/* strinfy the result list */
+/* format: [array of image data]@width@height<!> */
+/* <!> this symbol is used to split differnt images */
+const std::string strinfy(DLISTIMAGEPACK dpack){
+    std::string result = "";
+    for(int i=0;i<dpack.size();i++){    // extract line container
+        LISTIMAGEPACK linecontainer = dpack[i];
+        for(int j=0;j<linecontainer.size();j++){     // extract alpberts image on every line
+            // we're processing ImagePack here
+            std::string buf = "[";
+            std::string properties = to_string(linecontainer[j].properties.width) + "@"
+                                    + to_string(linecontainer[j].properties.height) + "<!>";
+            //start processing evert channel's pixel now
+            for(int z=0;z<linecontainer[j].properties.height;z++){
+                for(int l=0;l<linecontainer[j].properties.width;l++){
+                    buf += to_string(int(linecontainer[j].image[z][l][0]));
+                    if( l != linecontainer[j].properties.width - 1 ){
+                        buf += "," ;
+                    }
+                }
+            }
+            buf += "]@";
+            buf += properties;
+            result += buf;
+        }
+    }
+    return result;
+}
+
 /* ==============================================Extract text fucntion here================================== */
 
 DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){

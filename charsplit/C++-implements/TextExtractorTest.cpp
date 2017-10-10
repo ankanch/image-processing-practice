@@ -4,6 +4,12 @@
 
 using namespace std;
 
+void save_stringT(const std::string data,const std::string path){
+        std::fstream fs;
+        fs.open(path.c_str(),std::ios_base::out);
+        fs<<data;
+        fs.close();
+}
 
 int main(int argc,char**argv){
     cout<<">>Reading image"<<endl;
@@ -22,7 +28,9 @@ int main(int argc,char**argv){
     printMatrix(nullptr,i2d.properties,i2d.image);
     string npstr = numpylize(nullptr,i2d.properties,i2d.image);
     save_string(npstr,"cache/numpylizestr.txt");
-    extractText(rgb_image,a);
+    DLISTIMAGEPACK p = extractText(rgb_image,a);
+    string ss = strinfy(p);
+    save_stringT(ss,"dta.txt");
     cout<<">>width:"<<width<<"\theight:"<<height<<"\tbpp:"<<bpp<<endl;
     stbi_image_free(rgb_image);
 
