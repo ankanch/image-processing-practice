@@ -13,7 +13,8 @@
 #include <vector>
 #include <algorithm>
 
-#define ALLOW_DEBUG_MSG true
+#define ALLOW_DEBUG_MSG false
+#define ALLOW_DEBUG_FILE_STORAGE false
 
 /*****************************************************************************\
 ***                                                                        ***\   
@@ -128,31 +129,33 @@ void save2File(const IMAGE image,const ImageData &id,const std::string des="imag
 /* print Matrix to console */
 /* can print pixelize and depixelize */
 void printMatrix(const MATRIX mat3d,const ImageData&id,const IMAGE2D mat2d=nullptr){
-    std::cout<<"[";
-    if(id.channel > 0){
-        MATRIX mat = mat3d;
-        for(int i =0;i<id.height;i++){
-            std::cout<<"[";
-            for(int j=0;j<id.width;j++){
+    if(ALLOW_DEBUG_FILE_STORAGE){
+        std::cout<<"[";
+        if(id.channel > 0){
+            MATRIX mat = mat3d;
+            for(int i =0;i<id.height;i++){
                 std::cout<<"[";
-                for(int c=0;c<id.channel;c++){
-                    std::cout<< int(mat[i][j][c]) <<",";
+                for(int j=0;j<id.width;j++){
+                    std::cout<<"[";
+                    for(int c=0;c<id.channel;c++){
+                        std::cout<< int(mat[i][j][c]) <<",";
+                    }
+                    std::cout<<"\b] " ;
                 }
-                std::cout<<"\b] " ;
+                std::cout<<"\b] "<<std::endl;
             }
-            std::cout<<"\b] "<<std::endl;
+        }else{
+            IMAGE2D mat = mat2d;
+            for(int i =0;i<id.height;i++){
+                std::cout<<"[";
+                for(int j=0;j<id.width;j++){
+                    std::cout<< int(mat[i][j]) <<",";
+                }
+                std::cout<<"\b] "<<std::endl;
+            }  
         }
-    }else{
-        IMAGE2D mat = mat2d;
-        for(int i =0;i<id.height;i++){
-            std::cout<<"[";
-            for(int j=0;j<id.width;j++){
-                std::cout<< int(mat[i][j]) <<",";
-            }
-            std::cout<<"\b] "<<std::endl;
-        }  
+        std::cout<<"]"<<std::endl;
     }
-    std::cout<<"]"<<std::endl;
 }
 
 /* perform mean normailize to pictures */
@@ -356,12 +359,14 @@ const std::string numpylize(const IMAGE mat3d,const ImageData& id,const IMAGE2D 
 
 /* save string to file */
 void save_string(const std::string data,const std::string path){
-    klog("saving string...",false);
-    std::fstream fs;
-    fs.open(path.c_str(),std::ios_base::out);
-    fs<<data;
-    fs.close();
-    klog(".done.");
+    if(ALLOW_DEBUG_FILE_STORAGE){
+        klog("saving string...",false);
+        std::fstream fs;
+        fs.open(path.c_str(),std::ios_base::out);
+        fs<<data;
+        fs.close();
+        klog(".done.");
+    }
 }
 
 /* ==============================================Extract text fucntion here================================== */
