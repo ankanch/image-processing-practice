@@ -29,9 +29,10 @@ int main(int argc,char**argv){
     string npstr = numpylize(nullptr,i2d.properties,i2d.image);
     save_string(npstr,"cache/numpylizestr.txt");
     DLISTIMAGEPACK p = extractText(rgb_image,a);
-    string ss = strinfy(p);
+    int sum = 0;
+    string ss = strinfy(p,sum);
     save_stringT(ss,"dta.txt");
-    cout<<">>width:"<<width<<"\theight:"<<height<<"\tbpp:"<<bpp<<endl;
+    cout<<">>width:"<<width<<"\theight:"<<height<<"\tbpp:"<<bpp<<"\tsplit_sum="<<sum<<endl;
     stbi_image_free(rgb_image);
 
     //stbi_write_jpg("image2.jpg", width, height, 3, rgb_image, width*3);

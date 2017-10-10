@@ -369,10 +369,19 @@ void save_string(const std::string data,const std::string path){
     }
 }
 
+/* type cast: from C++ native int to uint8_t */
+uint8_t * cast2uint8_t(const int * src,const int len){
+    uint8_t * des = new uint8_t[len];
+    for(int i=0;i<len;i++){
+        des[i] = src[i];
+    }
+    return des;
+}
+
 /* strinfy the result list */
 /* format: [array of image data]@width@height<!> */
 /* <!> this symbol is used to split differnt images */
-const std::string strinfy(DLISTIMAGEPACK dpack){
+const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
     std::string result = "";
     for(int i=0;i<dpack.size();i++){    // extract line container
         LISTIMAGEPACK linecontainer = dpack[i];
@@ -385,14 +394,13 @@ const std::string strinfy(DLISTIMAGEPACK dpack){
             for(int z=0;z<linecontainer[j].properties.height;z++){
                 for(int l=0;l<linecontainer[j].properties.width;l++){
                     buf += to_string(int(linecontainer[j].image[z][l][0]));
-                    if( l != linecontainer[j].properties.width - 1 ){
-                        buf += "," ;
-                    }
+                    buf += "," ;
                 }
             }
-            buf += "]@";
+            buf += buf.substr(0,buf.length() - 1) + "]@";
             buf += properties;
             result += buf;
+            sum++;
         }
     }
     return result;
