@@ -390,17 +390,30 @@ const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
             std::string buf = "[";
             std::string properties = to_string(linecontainer[j].properties.width) + "@"
                                     + to_string(linecontainer[j].properties.height) + "<!>";
-            //start processing evert channel's pixel now
-            for(int z=0;z<linecontainer[j].properties.height;z++){
-                for(int l=0;l<linecontainer[j].properties.width;l++){
-                    buf += to_string(int(linecontainer[j].image[z][l][0]));
-                    buf += "," ;
+            //start processing evert channel's pixel now,only work for 1 channel image
+            // that is grayscale image
+            //int mmm=0;
+            if( linecontainer[j].properties.channel ==1 ){
+                for(int z=0;z<linecontainer[j].properties.height;z++){
+                    for(int l=0;l<linecontainer[j].properties.width;l++){
+                        buf += to_string(int(linecontainer[j].image[z][l][0])) + ",";
+                        //++mmm;
+                        //std::cout<<z<<","<<l<<"\t"<<mmm<<"\t:"<<int(linecontainer[j].image[z][l][0])<<std::endl;
+                    }
                 }
+                buf = buf.substr(0,buf.length() - 1) + "]@";
+                buf += properties;
+                result += buf;
+                sum++;
+                    /*/
+                    std::cout<<buf<<std::endl;
+                    std::cout<<linecontainer[j].properties.width<<","<<linecontainer[j].properties.height<<std::endl;
+                    std::cout<<properties<<std::endl;
+                    while(true){
+                        ;
+                    }
+                    /*/
             }
-            buf += buf.substr(0,buf.length() - 1) + "]@";
-            buf += properties;
-            result += buf;
-            sum++;
         }
     }
     return result;
