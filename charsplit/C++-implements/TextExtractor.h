@@ -13,8 +13,13 @@
 #include <vector>
 #include <algorithm>
 
+// for debug
 #define ALLOW_DEBUG_MSG false
 #define ALLOW_DEBUG_FILE_STORAGE false
+
+// control lower boundary
+#define LOWER_BOUNDARY  55
+
 
 /*****************************************************************************\
 ***                                                                        ***\   
@@ -159,7 +164,7 @@ void printMatrix(const MATRIX mat3d,const ImageData&id,const IMAGE2D mat2d=nullp
 }
 
 /* perform mean normailize to pictures */
-const IMAGE normalize(IMAGE image,const ImageData& id){
+const IMAGE normalize(IMAGE image,const ImageData& id,BASE* mean){
     long long sumx = 0;
     for(int i=0;i<id.height;i++){
         for(int j=0;j<id.width;j++){
@@ -167,14 +172,10 @@ const IMAGE normalize(IMAGE image,const ImageData& id){
         }
     }
     BASE avgv = BASE(sumx/(id.height*id.width));
+    *mean = avgv;
     for(int i =0;i<id.height;i++){
         for(int j=0;j<id.width;j++){
-            try{
-                image[i][j][0] -= avgv;
-            }catch(...){
-                klog(i,false);
-                klog(j,false);
-            }
+            image[i][j][0] -= avgv;
         }
     }
     return image;
@@ -430,10 +431,14 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     ImagePack grayscaleimgpack = to_grayScale(image,id);
     ImagePack2D a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
     save_string(numpylize(nullptr,a.properties,a.image),"cache/numpylizestr.txt");
-    klog("set to 1...");
-    grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties);
-    grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,50);
-    grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,185);
+    klog("normailize... and set to 1...");
+    /* White is 255 , black is 0, therefore ,
+    *  after normail, value of white is always large than black
+    *  value > mean = white, value < mean = black */
+    BASE meanx = 0;
+    grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties,&meanx);
+    grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,LOWER_BOUNDARY);   //50
+    grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,meanx-LOWER_BOUNDARY); //185
     klog("save normailzed picture...");
     a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
     save_string(numpylize(nullptr,a.properties,a.image),"cache/normalized.txt");
@@ -519,6 +524,7 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     delete[] ones_on_y;
     deleteMatrix(image,id);
     deleteMatrix(grayscaleimgpack.image,grayscaleimgpack.properties);
+    klog("mean= " + to_string(int(meanx)));
 
     return alphaberts;
 }
