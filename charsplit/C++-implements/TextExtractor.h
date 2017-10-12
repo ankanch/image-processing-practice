@@ -14,8 +14,8 @@
 #include <algorithm>
 
 // for debug
-#define ALLOW_DEBUG_MSG false
-#define ALLOW_DEBUG_FILE_STORAGE false
+#define ALLOW_DEBUG_MSG             false
+#define ALLOW_DEBUG_FILE_STORAGE    false
 
 // control lower boundary
 #define LOWER_BOUNDARY  55
@@ -214,7 +214,7 @@ const IMAGE to_Martix(uint8_t* img,const ImageData & id){
         for(int j=0;j<id.width;j++){
             PIXEL pixel = new CHANNEL[id.channel];
             for(int c=0;c<id.channel;c++){
-                pixel[c] = int(img[ i*id.width + j +c ]);
+                pixel[c] = int(img[ 3*(i*id.width + j) +c ]);
             }
             row[j] = pixel;
         }
