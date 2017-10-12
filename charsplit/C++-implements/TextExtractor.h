@@ -18,7 +18,7 @@
 #define ALLOW_DEBUG_FILE_STORAGE    false
 
 // control lower boundary
-#define LOWER_BOUNDARY  55
+#define LOWER_BOUNDARY  30
 
 
 /*****************************************************************************\
@@ -199,6 +199,20 @@ const IMAGE set_lessThan2Value(IMAGE image,const ImageData& id,const uint8_t val
                 if( int(image[i][j][0]) <= threshold ){
                         image[i][j][0] = value;
                 }
+        }
+    }
+    return image;
+}
+
+/* this function will enhancing the image (maxiumize the gray pixel value) */
+/* this function should be use only after the normailization and background deleted */
+/* for one channel image */
+const IMAGE enhanceImage(IMAGE image,const ImageData& id){
+    for(int i=0;i<id.height;i++){
+        for(int j=0;j<id.width;j++){
+            if(int(image[i][j][0])>0){
+                image[i][j][0] = 255;
+            }
         }
     }
     return image;
@@ -508,6 +522,7 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
                 //klog("scling... start:" + to_string(start) + "\tend:" + to_string(end) );
                 IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
                 ImagePack imp = {imx,{end-start,sen.properties.height,1}};
+                imp.image = enhanceImage(imp.image,imp.properties);
                 //printMatrix(imp.image,imp.properties);
                 //klog("depixelize");
                 ImagePack2D d2line = depixelize(imp.image,imp.properties);
