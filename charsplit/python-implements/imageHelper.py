@@ -143,6 +143,23 @@ def extractText(img,des):
         plt.imsave(des+str(i)+".jpg",img)
     return alphaberts
 
+def delete_background(img):
+    try:
+        img = grayScale(img)
+    except Exception as e:
+        print("already gray scale image")
+    # scan on y axis first to extract row out
+    PIXEL_JUMP = 10
+    row_jump_count = []
+    for row in img:
+        px = row.copy()
+        px[px>0] -= px[0]
+        jump = [ x for x in px if x>PIXEL_JUMP ]
+        row_jump_count.append(jump)
+    
+
+
+
 
 if __name__ == "__main__":
     IMG_PATH = "./data/test.jpg"

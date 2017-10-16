@@ -12,6 +12,7 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include"alphabertsrecognize.h"
 
 // for debug
 #define ALLOW_DEBUG_MSG             false
@@ -235,6 +236,11 @@ const IMAGE to_Martix(uint8_t* img,const ImageData & id){
         mat[i] = row;
     }
     return mat;
+}
+
+const IMAGE delete_background(IMAGE img,const ImageData& id){
+
+    return img;
 }
 
 /* get a slice of an matrix, like a[:,:] in Python */
@@ -540,6 +546,11 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     deleteMatrix(image,id);
     deleteMatrix(grayscaleimgpack.image,grayscaleimgpack.properties);
     klog("mean= " + to_string(int(meanx)));
+
+    //start recognize
+    predictAlphberts(alphaberts[0][0].image,alphaberts[0][0].properties.width,alphaberts[0][0].properties.height);
+
+    
 
     return alphaberts;
 }

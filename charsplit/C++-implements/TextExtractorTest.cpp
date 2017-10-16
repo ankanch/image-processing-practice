@@ -2,6 +2,7 @@
 #include<string>
 #include"TextExtractor.h"
 
+
 using namespace std;
 
 void save_stringT(const std::string data,const std::string path){
@@ -35,7 +36,10 @@ int main(int argc,char**argv){
     cout<<">>width:"<<width<<"\theight:"<<height<<"\tbpp:"<<bpp<<"\tsplit_sum="<<sum<<endl;
     stbi_image_free(rgb_image);
 
-    //stbi_write_jpg("image2.jpg", width, height, 3, rgb_image, width*3);
+
+    //test_eigen();
+    //Image x = to_EigenMatrixXd(subimage,b);
+    //cout<<x<<endl;
     
     return 0;
 }
