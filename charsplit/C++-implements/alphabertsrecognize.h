@@ -1,8 +1,13 @@
 #include<iostream>
 #include<cmath>
+#include<vector>
+#include<fstream>
 #include"lib/Eigen/Dense"
 #include"lib/Eigen/Core"
 #include"lib/Eigen/SVD"
+
+#define ABR_H
+
 using namespace Eigen;
 /*****************************************************************************\
 ***                                                                        ***\   
@@ -16,6 +21,71 @@ typedef uint8_t BASE;
 typedef BASE*** MATRIX;
 typedef BASE CHANNEL;
 typedef Matrix<double, Dynamic, 1> PcaVector;
+
+template <typename T>
+void alog(T a){
+    std::cout << ">>>"<<a<<std::endl;
+}
+
+std::vector<std::string> split_string(const std::string& data,const std::string&sym){
+    std::vector<std::string> result;
+    int s=0;
+    std::string subresult = "";
+    for(int i=0;i<data.length();i++){
+        if( data[i] == sym[0]  ){
+            bool found = true;
+            for(int j=1;j<sym.length();j++){
+                if( sym[j] != data[i+j] ){
+                    found = false;
+                    break;
+                }
+            }
+            if(found){
+                subresult = data.substr(s,i-s);
+                result.push_back(subresult);
+                i += sym.length();
+                s = i;
+            }
+        }
+    }
+    if(s != data.length()){
+        result.push_back( data.substr(s,data.length()-s) );
+    }
+    return result;
+}
+
+PcaVector paseToPCAvector(const std::vector<std::string>& data){
+    PcaVector vec(data.size(),1);
+    for(int i=0;i<data.size();i++){
+        vec(i,0) = std::atof(data[i].c_str());
+    }
+    return vec;
+}
+
+const std::vector<std::pair<PcaVector,std::string>> loadTemplateData(std::string fpath="template.data"){
+    std::vector<std::pair<PcaVector,std::string>> pcalist;
+    //read
+    std::string data;
+    std::fstream fs;
+    fs.open(fpath.c_str(),std::ios_base::in);
+    fs>>data;
+    fs.close();
+    //parse
+    // format:  value,value,...,...#charvalue@....
+    //          vector1#charvalue1@vector2#charvalue2@...
+    std::vector<std::string> datalist = split_string(data,"@");
+    for(int i=0;i<datalist.size();i++){
+        //alog(datalist[i]);
+        std::vector<std::string> datax = split_string(datalist[i],"#");
+        std::vector<std::string> values = split_string(datax[0],",");
+        PcaVector v = paseToPCAvector(values);
+        std::string rv = datax[1];
+        pcalist.push_back(std::pair<PcaVector,std::string>(v,rv));
+    }
+
+    return pcalist;
+}
+
 
 
 void test_eigen(){
@@ -42,13 +112,18 @@ MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
 
 /* get top k PCA vectors */
 PcaVector getPca(MatrixXd image,const int k){
+    //std::cout << ">>>conputing SVD..." << std::endl;
     JacobiSVD<MatrixXd> svd( image, ComputeThinU | ComputeThinV);
     // get matrix U ,sigma, V transpose
+    //std::cout << ">>>get U,sigma,Vt..." << std::endl;
     MatrixXd u = svd.matrixU();
     MatrixXd s = svd.singularValues().asDiagonal();
     MatrixXd vt = svd.matrixV().transpose();
 
-    // select PCA vectore
+    //std::cout<<">>>Matrix U:\t"<<u.cols()<<" Cols\t"<<u.rows()<<" Rows"<<std::endl;
+    //std::cout<<">>>Matrix U:\t"<<vt.cols()<<" Cols\t"<<vt.rows()<<" Rows"<<std::endl;
+
+    // select PCA vector
     PcaVector pcavec( u.rows()*k + vt.cols()*k ,1);
     int cur = 0;
     for (int i = 0; i < k; i++) {
@@ -71,6 +146,9 @@ double cosine(PcaVector v1, PcaVector v2) {
     double ans = 0;
 
     int n = v1.rows();
+    if(v2.rows() < v1.rows()){
+        n = v2.rows();
+    }
     double a = 0;
     for (int i = 0; i < n; i++) {
         a += v1(i,0) * v2(i,0);
@@ -91,7 +169,8 @@ double cosine(PcaVector v1, PcaVector v2) {
 }
 
 /* predict which alphaberts it is  */
-std::string predictAlphberts(MATRIX mat,const int width,const int height){
+std::string predictAlphberts(MATRIX mat,const int width,const int height,
+                            const std::vector<std::pair<PcaVector,std::string>>& pcalist){
     //convert to Eigen matrix
     MatrixXd x = to_EigenMatrixXd(mat,width,height);
     
@@ -99,7 +178,16 @@ std::string predictAlphberts(MATRIX mat,const int width,const int height){
     PcaVector pca = getPca(x,2);
 
     // loop computing cos with the template data
+    double maxv = 0;
+    std::string current="*";
+    for(int i=0;i<pcalist.size();i++){
+        double x = cosine(pca,pcalist[i].first);
+        if(x > maxv){
+            maxv =x;
+            current = pcalist[i].second;
+        }
+    }
     
     // return data
-    return "";
+    return current;
 }

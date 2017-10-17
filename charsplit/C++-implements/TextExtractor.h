@@ -12,7 +12,10 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
-#include"alphabertsrecognize.h"
+
+#ifndef ABR_H
+    #include"alphabertsrecognize.h"
+#endif
 
 // for debug
 #define ALLOW_DEBUG_MSG             false
@@ -442,7 +445,8 @@ const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
 
 /* ==============================================Extract text fucntion here================================== */
 
-DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
+//DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
+std::string extractText(uint8_t* img,const ImageData & id){
     klog("converting to matrix...");
     const IMAGE image = to_Martix(img,id);
     klog("saving matrix...");
@@ -548,9 +552,20 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     klog("mean= " + to_string(int(meanx)));
 
     //start recognize
-    predictAlphberts(alphaberts[0][0].image,alphaberts[0][0].properties.width,alphaberts[0][0].properties.height);
+    std::string result = "";
+    std::cout<<"loading..."<<std::endl;
+    const std::vector<std::pair<PcaVector,std::string>> pcalist =  loadTemplateData("template.data");
+    std::cout<<"after return, pcalist length="<<pcalist.size()<<std::endl;
+    std::cout<<"predicting..."<<std::endl;
+    for(int i=0;i<alphaberts.size();i++){
+        LISTIMAGEPACK alpha = alphaberts[i];
+        for(int j=0;j<alpha.size();j++){
+            std::string re = predictAlphberts(alpha[j].image,alpha[j].properties.width,alpha[j].properties.height,pcalist);
+            result += re;
+        }
+    }
+    std::cout<<result<<std::endl;
+    return result;
 
-    
-
-    return alphaberts;
+    //return alphaberts;
 }

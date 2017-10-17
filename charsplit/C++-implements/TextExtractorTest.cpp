@@ -16,7 +16,7 @@ int main(int argc,char**argv){
     cout<<">>Reading image"<<endl;
     int width, height, bpp;
     
-    uint8_t* rgb_image = stbi_load("data/testx.jpg", &width, &height, &bpp, 3);
+    uint8_t* rgb_image = stbi_load("data/test.jpg", &width, &height, &bpp, 3);
 
     ImageData a = {width,height,bpp};
     klog(width);
@@ -29,13 +29,16 @@ int main(int argc,char**argv){
     printMatrix(nullptr,i2d.properties,i2d.image);
     string npstr = numpylize(nullptr,i2d.properties,i2d.image);
     save_string(npstr,"cache/numpylizestr.txt");
+    extractText(rgb_image,a);
+    
+    /*/ split word for return
     DLISTIMAGEPACK p = extractText(rgb_image,a);
     int sum = 0;
     string ss = strinfy(p,sum);
     save_stringT(ss,"dta.txt");
     cout<<">>width:"<<width<<"\theight:"<<height<<"\tbpp:"<<bpp<<"\tsplit_sum="<<sum<<endl;
     stbi_image_free(rgb_image);
-
+    /*/
 
     //test_eigen();
     //Image x = to_EigenMatrixXd(subimage,b);
