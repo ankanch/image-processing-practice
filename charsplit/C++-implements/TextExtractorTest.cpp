@@ -29,16 +29,18 @@ int main(int argc,char**argv){
     printMatrix(nullptr,i2d.properties,i2d.image);
     string npstr = numpylize(nullptr,i2d.properties,i2d.image);
     save_string(npstr,"cache/numpylizestr.txt");
-    extractText(rgb_image,a);
     
-    /*/ split word for return
+    // extract single alphaberts image
     DLISTIMAGEPACK p = extractText(rgb_image,a);
     int sum = 0;
     string ss = strinfy(p,sum);
     save_stringT(ss,"dta.txt");
     cout<<">>width:"<<width<<"\theight:"<<height<<"\tbpp:"<<bpp<<"\tsplit_sum="<<sum<<endl;
     stbi_image_free(rgb_image);
-    /*/
+
+    // recognize
+    string result = recognize(p);
+    cout<<"result:\t"<<result<<endl;
 
     //test_eigen();
     //Image x = to_EigenMatrixXd(subimage,b);

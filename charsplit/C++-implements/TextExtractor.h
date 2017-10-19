@@ -445,8 +445,8 @@ const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
 
 /* ==============================================Extract text fucntion here================================== */
 
-//DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
-std::string extractText(uint8_t* img,const ImageData & id){
+DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
+//std::string extractText(uint8_t* img,const ImageData & id){
     klog("converting to matrix...");
     const IMAGE image = to_Martix(img,id);
     klog("saving matrix...");
@@ -551,21 +551,24 @@ std::string extractText(uint8_t* img,const ImageData & id){
     deleteMatrix(grayscaleimgpack.image,grayscaleimgpack.properties);
     klog("mean= " + to_string(int(meanx)));
 
+
+    return alphaberts;
+}
+
+/* recognize a single image */
+std::string recognize(const DLISTIMAGEPACK& data){
     //start recognize
     std::string result = "";
     std::cout<<"loading..."<<std::endl;
     const std::vector<std::pair<PcaVector,std::string>> pcalist =  loadTemplateData("template.data");
     std::cout<<"after return, pcalist length="<<pcalist.size()<<std::endl;
     std::cout<<"predicting..."<<std::endl;
-    for(int i=0;i<alphaberts.size();i++){
-        LISTIMAGEPACK alpha = alphaberts[i];
+    for(int i=0;i<data.size();i++){
+        LISTIMAGEPACK alpha = data[i];
         for(int j=0;j<alpha.size();j++){
             std::string re = predictAlphberts(alpha[j].image,alpha[j].properties.width,alpha[j].properties.height,pcalist);
             result += re;
         }
     }
-    std::cout<<result<<std::endl;
     return result;
-
-    //return alphaberts;
 }
