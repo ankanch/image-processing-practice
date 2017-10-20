@@ -69,9 +69,6 @@ int main(int argc,char**argv){
                         colvecstr += to_string(pca(i,0)) + ",";
                     }
                     std::string symbol = to_string(fname[0]);
-                    if(fname[1] == 'u'){
-                        symbol = char(symbol[0]-32);
-                    }
                     result += colvecstr.substr(0,colvecstr.length()-1) + "#" + symbol + "@";
 
                 }else{
