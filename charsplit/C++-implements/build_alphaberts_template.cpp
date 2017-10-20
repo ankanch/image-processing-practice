@@ -54,10 +54,14 @@ int main(int argc,char**argv){
                     std::cout<<"Converting to EigenMatrix...\t";
                     MatrixXd x = to_EigenMatrixXd(imagex.image,imagex.properties.width,imagex.properties.height);
                     std::cout<<"\tdone.\t"<<x.rows()<<" rows,"<<x.cols()<<" columns"<<std::endl;
+
+                    // normalize the image size
+                    std::cout<<"normalize size..."<<std::endl;
+                    x.conservativeResize(25,25);
             
                     //get PCA vector
                     std::cout<<"Computing SVD to get PCA vectors..."<<std::endl;
-                    PcaVector pca = getPca(x,2);
+                    PcaVector pca = getPca(x,12);
 
                     std::cout<<"converting to string..."<<std::endl;
                     std::string colvecstr = "";
@@ -78,8 +82,9 @@ int main(int argc,char**argv){
             closedir (dir);
             std::cout<<"saving..."<<std::endl;
             std::fstream fs;
-            fs.open("template.data",std::ios_base::out);
-            fs<<result;
+            fs.open("template.h",std::ios_base::out);
+            std::string head = "#include<string>\r\nstd::string pcadata = \" " + result + "\";";
+            fs<<head;
             fs.close();
             std::cout<<"result length:\t"<<result.length()<<std::endl;
             

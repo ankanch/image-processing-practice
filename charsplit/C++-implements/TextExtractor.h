@@ -12,6 +12,7 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include"template.h"
 
 #ifndef ABR_H
     #include"alphabertsrecognize.h"
@@ -560,7 +561,7 @@ std::string recognize(const DLISTIMAGEPACK& data){
     //start recognize
     std::string result = "";
     std::cout<<"loading..."<<std::endl;
-    const std::vector<std::pair<PcaVector,std::string>> pcalist =  loadTemplateData("template.data");
+    const std::vector<std::pair<PcaVector,std::string>> pcalist =  parseTemplateData(pcadata);
     std::cout<<"after return, pcalist length="<<pcalist.size()<<std::endl;
     std::cout<<"predicting..."<<std::endl;
     for(int i=0;i<data.size();i++){

@@ -8,6 +8,7 @@
 
 #define ABR_H
 
+
 using namespace Eigen;
 /*****************************************************************************\
 ***                                                                        ***\   
@@ -86,7 +87,23 @@ const std::vector<std::pair<PcaVector,std::string>> loadTemplateData(std::string
     return pcalist;
 }
 
+const std::vector<std::pair<PcaVector,std::string>> parseTemplateData(std::string data){
+    std::vector<std::pair<PcaVector,std::string>> pcalist;
+    //parse
+    // format:  value,value,...,...#charvalue@....
+    //          vector1#charvalue1@vector2#charvalue2@...
+    std::vector<std::string> datalist = split_string(data,"@");
+    for(int i=0;i<datalist.size();i++){
+        //alog(datalist[i]);
+        std::vector<std::string> datax = split_string(datalist[i],"#");
+        std::vector<std::string> values = split_string(datax[0],",");
+        PcaVector v = paseToPCAvector(values);
+        std::string rv = datax[1];
+        pcalist.push_back(std::pair<PcaVector,std::string>(v,rv));
+    }
 
+    return pcalist;
+}
 
 void test_eigen(){
     MatrixXd C;
@@ -173,9 +190,12 @@ std::string predictAlphberts(MATRIX mat,const int width,const int height,
                             const std::vector<std::pair<PcaVector,std::string>>& pcalist){
     //convert to Eigen matrix
     MatrixXd x = to_EigenMatrixXd(mat,width,height);
+
+    //normalize size
+    x.conservativeResize(25,25);
     
     //get PCA vector
-    PcaVector pca = getPca(x,2);
+    PcaVector pca = getPca(x,12);
 
     // loop computing cos with the template data
     double maxv = 0;
