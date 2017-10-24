@@ -16,7 +16,7 @@ else:
         pass
     imglist = os.listdir(sys.argv[1])
     for image in imglist:
-        if "alp_" in image:
+        if "alp_" in image or "template_sc" in image:
             print("processing",image)
             with open(sys.argv[1] + image,"r") as ff:
                 data = ff.read().replace("\n","").replace("\t","")

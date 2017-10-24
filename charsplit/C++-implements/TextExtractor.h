@@ -19,8 +19,8 @@
 #endif
 
 // for debug
-#define ALLOW_DEBUG_MSG             false
-#define ALLOW_DEBUG_FILE_STORAGE    false
+#define ALLOW_DEBUG_MSG             true
+#define ALLOW_DEBUG_FILE_STORAGE    true
 
 // control lower boundary
 #define LOWER_BOUNDARY  30
@@ -69,6 +69,8 @@ struct ImagePack2D{
 typedef std::vector<ImagePack> LISTIMAGEPACK;
 typedef std::vector<ImagePack2D> LISTIMAGEPACK2D;
 typedef std::vector<LISTIMAGEPACK> DLISTIMAGEPACK;
+
+void save_string(const std::string data,const std::string path);
 
 /* ==============================================Helper Function============================================ */
 
@@ -242,7 +244,34 @@ const IMAGE to_Martix(uint8_t* img,const ImageData & id){
     return mat;
 }
 
-const IMAGE delete_background(IMAGE img,const ImageData& id){
+/* set background to 0, text to 1 */
+const IMAGE Thresholding(IMAGE img,const ImageData& id){
+    std::string hist = "";
+    //first count 0 to 255 pixel value count
+    std::vector<int> pixelcount;
+    for(int i=0;i<256;i++){
+        int buf_count=0;
+        for(int h=0;h<id.height;h++){
+            for(int w=0;w<id.width;w++){
+                if(int(img[h][w][0]) == i){
+                    ++buf_count;
+                }
+            }
+        }
+        hist += to_string(buf_count) + ",";
+        pixelcount.push_back(buf_count);
+    }
+    save_string( "[" + hist.substr(0,hist.length() -1 ) + "]" ,"cache/hist.txt");
+
+    std::vector<int>::iterator max_pos = std::max_element(pixelcount.begin(),pixelcount.end());
+    int max_value = 0;
+    klog(max_value);
+    // run 
+    // start split backgroudn color and forecolor
+    for(int i=0;i<pixelcount.size();i++){
+
+    }
+
 
     return img;
 }
@@ -315,7 +344,7 @@ const ImagePack to_grayScale(const IMAGE image,const ImageData& id){
     for(int i=0;i<id.height;i++){
         ROW row = new PIXEL[id.width];
         for(int j=0;j<id.width;j++){
-            long buf =  (image[i][j][0]*299 + image[i][j][1]*587 + image[i][j][2]*114 + 500) / 1000;
+            int buf =  int(image[i][j][0]*0.11 + image[i][j][1]*0.59 + image[i][j][2]*0.3 );
             PIXEL p = new CHANNEL[1]{ BASE(buf) };
             row[j] = p;
         }
@@ -444,6 +473,103 @@ const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
     return result;
 }
 
+/* delete empty line of an image */
+const IMAGE delteEmptyline(IMAGE image,ImageData&id){
+    int del_target = 1;
+    int countx = 0;
+    int del_line=0;
+    // scan on top
+    for(int i=0;i<id.height;i++){
+        for(int j=0;j<id.width;j++){
+            if( int(image[i][j][0]) == del_target ){
+                ++countx;
+            }
+        }
+        if(countx != id.width){
+            break;
+        }else{
+            ++del_line;
+            countx = 0;
+        }
+    }
+    image = sliceSubMatrix3D(image,id,del_line,id.height,-1,-1);
+    id.height -= del_line;
+
+    // scan on bottom
+    countx=0;
+    del_line=0;
+    for(int i=id.height-1;i>=0;i--){
+        for(int j=0;j<id.width;j++){
+            if( int(image[i][j][0]) == del_target ){
+                ++countx;
+            }
+        }
+        if(countx != id.width){
+            break;
+        }else{
+            ++del_line;
+            countx = 0;
+        }
+    }
+    image = sliceSubMatrix3D(image,id,0,id.height-del_line,-1,-1);
+    id.height -= del_line;
+
+    // scan on the left
+    countx=0;
+    del_line=0;
+    for(int i=0;i<id.width;i++){
+        for(int j=0;j<id.height;j++){
+            if( int(image[j][i][0]) == del_target ){
+                ++countx;
+            }
+        }
+        if(countx != id.height){
+            break;
+        }else{
+            ++del_line;
+            countx = 0;
+        }
+    }
+    image = sliceSubMatrix3D(image,id,-1,-1,del_line,id.width);
+    id.width -= del_line;
+
+    // scan on the right
+    countx=0;
+    del_line=0;
+    for(int i=id.width-1;i>=0;i++){
+        for(int j=0;j<id.height;j++){
+            if( int(image[j][i][0]) == del_target ){
+                ++countx;
+            }
+        }
+        if(countx != id.height){
+            break;
+        }else{
+            ++del_line;
+            countx = 0;
+        }
+    }
+    image = sliceSubMatrix3D(image,id,-1,-1,0,id.width-del_line);
+    id.width -= del_line;
+
+    return image;
+}
+
+/* image feature extractor: 投影区块匹配  */
+std::string feature_extractor_projectionmatch(IMAGE img,ImageData&id){
+    std::string feature;
+
+    return feature;
+}
+
+
+/* image feature extractor: 九宫格匹配  */
+std::string feature_extractor_Jiugongge(IMAGE img,ImageData&id){
+    std::string feature;
+
+    return feature;
+}
+
 /* ==============================================Extract text fucntion here================================== */
 
 DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
@@ -454,16 +580,17 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     save_string( numpylize(image,id) ,"cache/raw_image.txt");
     klog("to grayscale image...");
     ImagePack grayscaleimgpack = to_grayScale(image,id);
+    //Thresholding(image,id);
     ImagePack2D a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
     save_string(numpylize(nullptr,a.properties,a.image),"cache/numpylizestr.txt");
     klog("normailize... and set to 1...");
     /* White is 255 , black is 0, therefore ,
     *  after normail, value of white is always large than black
     *  value > mean = white, value < mean = black */
-    BASE meanx = 0;
-    grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties,&meanx);
-    grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,LOWER_BOUNDARY);   //50
-    grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,meanx-LOWER_BOUNDARY); //185
+    //BASE meanx = 0;
+    //grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties,&meanx);
+    grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,180);   //50
+    grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,180); //185
     klog("save normailzed picture...");
     a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
     save_string(numpylize(nullptr,a.properties,a.image),"cache/normalized.txt");
@@ -550,7 +677,7 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     delete[] ones_on_y;
     deleteMatrix(image,id);
     deleteMatrix(grayscaleimgpack.image,grayscaleimgpack.properties);
-    klog("mean= " + to_string(int(meanx)));
+    //klog("mean= " + to_string(int(meanx)));
 
 
     return alphaberts;

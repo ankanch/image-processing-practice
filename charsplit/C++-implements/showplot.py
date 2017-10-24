@@ -7,7 +7,7 @@ argv_count = len(sys.argv)
 if argv_count <= 1:
 	print("no args ,exit")
 	exit()
-else:
+elif argv_count in (2,3):
 	print("reading numpylized data from ",sys.argv[1])
 	with open(sys.argv[1]) as ff:
 		data = ff.read().replace("\n","").replace("\t","")
@@ -24,3 +24,13 @@ else:
 			plt.imshow(img)
 		plt.show()
 		print("done.")
+else:
+	print("reading plot from ",sys.argv[1])
+	with open(sys.argv[1]) as ff:
+		data = ff.read().replace("\n","").replace("\t","")
+		t = eval(data)		
+		print("done reading data.")
+		img = np.asarray(t)
+		print(img,img.shape)
+		plt.plot([x for x in range(256)],img)
+		plt.show()
