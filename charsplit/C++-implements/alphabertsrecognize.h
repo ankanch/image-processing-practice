@@ -7,6 +7,7 @@
 #include"lib/Eigen/SVD"
 
 #define ABR_H
+#define FEATURE_DEFENDED
 
 
 using namespace Eigen;
@@ -22,6 +23,17 @@ typedef uint8_t BASE;
 typedef BASE*** MATRIX;
 typedef BASE CHANNEL;
 typedef Matrix<double, Dynamic, 1> PcaVector;
+
+/* structures to stores Features */
+struct Features{
+    std::vector<int> x_sum;
+    std::vector<int> y_sum;
+    std::vector<int> line_sum;
+    int width;
+    int height;
+    double wh_ratio;
+    std::string label;
+};
 
 template <typename T>
 void alog(T a){
@@ -86,23 +98,42 @@ const std::vector<std::pair<PcaVector,std::string>> loadTemplateData(std::string
 
     return pcalist;
 }
-
-const std::vector<std::pair<PcaVector,std::string>> parseTemplateData(std::string data){
-    std::vector<std::pair<PcaVector,std::string>> pcalist;
-    //parse
-    // format:  value,value,...,...#charvalue@....
-    //          vector1#charvalue1@vector2#charvalue2@...
-    std::vector<std::string> datalist = split_string(data,"@");
-    for(int i=0;i<datalist.size();i++){
-        //alog(datalist[i]);
-        std::vector<std::string> datax = split_string(datalist[i],"#");
-        std::vector<std::string> values = split_string(datax[0],",");
-        PcaVector v = paseToPCAvector(values);
-        std::string rv = datax[1];
-        pcalist.push_back(std::pair<PcaVector,std::string>(v,rv));
+/* converting string to features,s = x1,x2@y1,y2@scale@height,width@label */
+Features string2feature(std::string s){
+    Features f;
+    // get x_sum_str,y_sum_str,ration_str,height_str,width_str,label
+    std::vector<std::string> dataframe = split_string(s,"@"); 
+    //parse x_sum
+    std::vector<std::string> values = split_string(dataframe[0],",");
+    std::vector<int> xsum;
+    for(int i=0;i<values.size();i++){
+        xsum.push_back(atoi(values[i].c_str()));
     }
+    //parse y_sum
+    values = split_string(dataframe[1],",");
+    std::vector<int> ysum;
+    for(int i=0;i<values.size();i++){
+        ysum.push_back(atoi(values[i].c_str()));
+    }
+    f.x_sum = xsum;
+    f.y_sum = ysum;
+    //parse ratio
+    f.wh_ratio = atof(dataframe[2].c_str());
+    // parse width and height
+    f.height = atoi(dataframe[3].c_str());
+    f.width = atoi(dataframe[4].c_str());
+    f.label = dataframe[5];
 
-    return pcalist;
+    return f;
+}
+
+const std::vector<Features> parseTemplateData(std::string data){
+    std::vector<Features> templatelist;
+    std::vector<std::string> datalist = split_string(data,"#");
+    for(int i=0;i<datalist.size();i++){
+        templatelist.push_back( string2feature(datalist[i]) );
+    }
+    return templatelist;
 }
 
 void test_eigen(){

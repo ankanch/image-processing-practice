@@ -46,6 +46,12 @@ int main(int argc,char**argv){
                             //klog("saving");
                             save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/template_scale2fit_"+ to_string(++i) + ".txt");                    
 
+                            // scale image to the same size
+                            cout<<"get projection and width-height ration features ...\t";
+                            Features f =  feature_extractor_projectionmatch(imagex.image,imagex.properties,to_string(fname[0]));
+                            cout<<"converting to string ...\n";
+                            std::string strx = feature2string(f);
+                            result += strx + "#";
 
         
                         }else{

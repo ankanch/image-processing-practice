@@ -66,6 +66,19 @@ struct ImagePack2D{
     IMAGE2D image;
     ImageData properties;
 };
+#ifndef FEATURE_DEFENDED
+//#define FEATURE_DEFENDED
+/* structures to stores Features */
+struct Features{
+    std::vector<int> x_sum;
+    std::vector<int> y_sum;
+    std::vector<int> line_sum;
+    int width;
+    int height;
+    double wh_ratio;
+    std::string label;
+};
+#endif
 typedef std::vector<ImagePack> LISTIMAGEPACK;
 typedef std::vector<ImagePack2D> LISTIMAGEPACK2D;
 typedef std::vector<LISTIMAGEPACK> DLISTIMAGEPACK;
@@ -556,19 +569,87 @@ const IMAGE delteEmptyline(IMAGE image,ImageData&id){
 }
 
 /* image feature extractor: 投影区块匹配  */
-std::string feature_extractor_projectionmatch(IMAGE img,ImageData&id){
-    std::string feature;
-
+Features feature_extractor_projectionmatch(IMAGE img,ImageData&id,std::string label){
+    Features feature;
+    std::vector<int> xsum(id.width);
+    std::vector<int> ysum;
+    for(int i=0;i<id.height;i++){
+        int ycount = 0;
+        for(int j=0;j<id.width;j++){
+            if( int(img[i][j][0]) == 0 ){ // black color, with data
+                ++ycount;
+                ++xsum[j];
+            }
+        }
+        ysum.push_back(ycount);
+    }
+    feature.x_sum = xsum;
+    feature.y_sum = ysum;
+    feature.width = id.width;
+    feature.height = id.height;
+    feature.wh_ratio = double(id.width)/id.height;
+    feature.label = label;
     return feature;
 }
 
 
 /* image feature extractor: 九宫格匹配  */
-std::string feature_extractor_Jiugongge(IMAGE img,ImageData&id){
-    std::string feature;
+Features feature_extractor_Jiugongge(IMAGE img,ImageData&id){
+    Features feature;
 
     return feature;
 }
+
+/* parse feature structure to string */
+/* feature format: x1,x2@y1,y2@scale@height,width@label#next_feature_section */
+std::string feature2string(Features f){
+    std::string buf = "";
+    for(int i=0;i<f.x_sum.size();i++){
+        buf += to_string(f.x_sum[i]) + ",";
+    }
+    buf = buf.substr(0,buf.length()-1) + "@";
+    for(int i=0;i<f.y_sum.size();i++){
+        buf += to_string(f.y_sum[i]) + ",";
+    }
+    buf = buf.substr(0,buf.length()-1) + "@";
+    buf += to_string(f.wh_ratio) + "@";
+    buf += to_string(f.height) + ",";
+    buf += to_string(f.width) + "@";
+    buf += f.label;
+
+    return buf;
+}
+
+#ifndef FEATURE_DEFENDED
+/* converting string to features,s = x1,x2@y1,y2@scale@height,width@label */
+Features string2feature(std::string s){
+    Features f;
+    // get x_sum_str,y_sum_str,ration_str,height_str,width_str,label
+    std::vector<std::string> dataframe = split_string(s,"@"); 
+    //parse x_sum
+    std::vector<std::string> values = split_string(dataframe[0],",");
+    std::vector<int> xsum;
+    for(int i=0;i<values.size();i++){
+        xsum.push_back(atoi(values[i].c_str()));
+    }
+    //parse y_sum
+    values = split_string(dataframe[1],",");
+    std::vector<int> ysum;
+    for(int i=0;i<values.size();i++){
+        ysum.push_back(atoi(values[i].c_str()));
+    }
+    f.x_sum = xsum;
+    f.y_sum = ysum;
+    //parse ratio
+    f.wh_ratio = atof(dataframe[2].c_str());
+    // parse width and height
+    f.height = atoi(dataframe[3].c_str());
+    f.width = atoi(dataframe[4].c_str());
+    f.label = dataframe[5];
+
+    return f;
+}
+#endif
 
 /* ==============================================Extract text fucntion here================================== */
 
@@ -688,13 +769,13 @@ std::string recognize(const DLISTIMAGEPACK& data){
     //start recognize
     std::string result = "";
     std::cout<<"loading..."<<std::endl;
-    const std::vector<std::pair<PcaVector,std::string>> pcalist =  parseTemplateData(pcadata);
-    std::cout<<"after return, pcalist length="<<pcalist.size()<<std::endl;
+    const std::vector<Features> templatedata =  parseTemplateData(pcadata);
+    std::cout<<"after return, pcalist length="<<templatedata.size()<<std::endl;
     std::cout<<"predicting..."<<std::endl;
     for(int i=0;i<data.size();i++){
         LISTIMAGEPACK alpha = data[i];
         for(int j=0;j<alpha.size();j++){
-            std::string re = predictAlphberts(alpha[j].image,alpha[j].properties.width,alpha[j].properties.height,pcalist);
+            std::string re = "";//predictAlphberts(alpha[j].image,alpha[j].properties.width,alpha[j].properties.height,pcalist);
             result += re;
         }
     }
