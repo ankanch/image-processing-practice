@@ -10,13 +10,15 @@
 #include<iostream>
 #include<fstream>
 #include <sstream>
+#include<cmath>
 #include <vector>
 #include <algorithm>
+#include"lib/Eigen/Dense"
+#include"lib/Eigen/Core"
+#include"lib/Eigen/SVD"
 #include"template.h"
 
-#ifndef ABR_H
-    #include"alphabertsrecognize.h"
-#endif
+using namespace Eigen;
 
 // for debug
 #define ALLOW_DEBUG_MSG             true
@@ -34,8 +36,9 @@
 ***                         kanchisme@gmail.com                            ***\
 ***                                                                        ***\
 ***                                                                        ***\
-******************************************************************************\
+****************************************************************************\*/
 
+#ifndef FEATURE_DEFENDED
 /* Basic types */
 typedef uint8_t BASE;
 typedef BASE*** MATRIX;
@@ -45,6 +48,7 @@ typedef BASE* PIXEL;
 typedef BASE* ALPHABERTS;
 typedef BASE CHANNEL;
 typedef MATRIX  IMAGE;
+typedef Matrix<double, Dynamic, 1> PcaVector;
 typedef std::vector<int> LIST;
 
 typedef ROW IMAGE2D;
@@ -66,7 +70,7 @@ struct ImagePack2D{
     IMAGE2D image;
     ImageData properties;
 };
-#ifndef FEATURE_DEFENDED
+
 //#define FEATURE_DEFENDED
 /* structures to stores Features */
 struct Features{
@@ -78,10 +82,11 @@ struct Features{
     double wh_ratio;
     std::string label;
 };
-#endif
+
 typedef std::vector<ImagePack> LISTIMAGEPACK;
 typedef std::vector<ImagePack2D> LISTIMAGEPACK2D;
 typedef std::vector<LISTIMAGEPACK> DLISTIMAGEPACK;
+#endif
 
 void save_string(const std::string data,const std::string path);
 
@@ -445,6 +450,35 @@ uint8_t * cast2uint8_t(const int * src,const int len){
     return des;
 }
 
+
+std::vector<std::string> split_string(const std::string& data,const std::string&sym){
+    std::vector<std::string> result;
+    int s=0;
+    std::string subresult = "";
+    for(int i=0;i<data.length();i++){
+        if( data[i] == sym[0]  ){
+            bool found = true;
+            for(int j=1;j<sym.length();j++){
+                if( sym[j] != data[i+j] ){
+                    found = false;
+                    break;
+                }
+            }
+            if(found){
+                subresult = data.substr(s,i-s);
+                result.push_back(subresult);
+                i += sym.length();
+                s = i;
+            }
+        }
+    }
+    if(s != data.length()){
+        result.push_back( data.substr(s,data.length()-s) );
+    }
+    return result;
+}
+
+
 /* strinfy the result list */
 /* format: [array of image data]@width@height<!> */
 /* <!> this symbol is used to split differnt images */
@@ -624,7 +658,7 @@ std::string feature2string(Features f){
 /* converting string to features,s = x1,x2@y1,y2@scale@height,width@label */
 Features string2feature(std::string s){
     Features f;
-    // get x_sum_str,y_sum_str,ration_str,height_str,width_str,label
+    // get x_sum_str,y_sum_str,tatio_str,height_str,width_str,label
     std::vector<std::string> dataframe = split_string(s,"@"); 
     //parse x_sum
     std::vector<std::string> values = split_string(dataframe[0],",");
@@ -643,13 +677,63 @@ Features string2feature(std::string s){
     //parse ratio
     f.wh_ratio = atof(dataframe[2].c_str());
     // parse width and height
-    f.height = atoi(dataframe[3].c_str());
-    f.width = atoi(dataframe[4].c_str());
-    f.label = dataframe[5];
+    std::vector<std::string> hw = split_string(dataframe[3],",");
+    f.height = atoi(hw[0].c_str());
+    f.width = atoi(hw[1].c_str());
+    f.label = dataframe[4];
 
     return f;
 }
 #endif
+
+/* function below is used for prediction */
+
+const std::vector<Features> parseTemplateData(std::string data){
+    std::vector<Features> templatelist;
+    std::vector<std::string> datalist = split_string(data,"#");
+    for(int i=0;i<datalist.size();i++){
+        templatelist.push_back( string2feature(datalist[i]) );
+    }
+    return templatelist;
+}
+/* cast native matrix MATRIX to Eigen Matrix type */
+MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
+    MatrixXd result(height,width);
+    for(int i=0;i<height;i++){
+        for(int j=0;j<width;j++){
+            result(i,j) = mat[i][j][0];
+        }
+    }
+    return result;
+}
+/* compute similarity */
+const double similarity(const ImagePack img,const Features temp){
+    return 0.0;
+}
+
+/* predict which alphaberts it is  */
+std::string predictAlphberts(ImagePack img,const std::vector<Features> &templatedata){
+    //delete empty line
+    img.image = delteEmptyline(img.image,img.properties);
+    ImagePack2D d2line = depixelize(img.image,img.properties);
+    //klog("saving");
+    save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp___000000.txt");
+    
+
+    // loop computing cos with the template data
+    double maxv = 0;
+    std::string current="*";
+    for(int i=0;i<templatedata.size();i++){
+        double x = similarity(img,templatedata[i]);
+        if(x > maxv){
+            maxv =x;
+            current = templatedata[i].label;
+        }
+    }
+    
+    // return data
+    return current;
+}
 
 /* ==============================================Extract text fucntion here================================== */
 
@@ -741,7 +825,7 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
                 //klog("scling... start:" + to_string(start) + "\tend:" + to_string(end) );
                 IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
                 ImagePack imp = {imx,{end-start,sen.properties.height,1}};
-                imp.image = enhanceImage(imp.image,imp.properties);
+                //imp.image = enhanceImage(imp.image,imp.properties);
                 //printMatrix(imp.image,imp.properties);
                 //klog("depixelize");
                 ImagePack2D d2line = depixelize(imp.image,imp.properties);
@@ -775,7 +859,7 @@ std::string recognize(const DLISTIMAGEPACK& data){
     for(int i=0;i<data.size();i++){
         LISTIMAGEPACK alpha = data[i];
         for(int j=0;j<alpha.size();j++){
-            std::string re = "";//predictAlphberts(alpha[j].image,alpha[j].properties.width,alpha[j].properties.height,pcalist);
+            std::string re = predictAlphberts(alpha[j],templatedata);
             result += re;
         }
     }

@@ -68,6 +68,7 @@
         "xloctime": "cpp",
         "xtree": "cpp",
         "svd": "cpp",
-        "dense": "cpp"
+        "dense": "cpp",
+        "core": "cpp"
     }
 }

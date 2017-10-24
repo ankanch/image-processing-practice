@@ -42,9 +42,6 @@ int main(int argc,char**argv){
     string result = recognize(p);
     cout<<"result:\t"<<result<<endl;
 
-    //test_eigen();
-    //Image x = to_EigenMatrixXd(subimage,b);
-    //cout<<x<<endl;
     
     return 0;
 }
