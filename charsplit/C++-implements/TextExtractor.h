@@ -243,6 +243,19 @@ const IMAGE enhanceImage(IMAGE image,const ImageData& id){
     return image;
 }
 
+const IMAGE reverseImageBit(IMAGE image,const ImageData& id){
+    for(int i=0;i<id.height;i++){
+        for(int j=0;j<id.width;j++){
+            if(int(image[i][j][0]) == 0){
+                image[i][j][0] = 1;
+            }else{
+                image[i][j][0] = 0;
+            }
+        }
+    }
+    return image;
+}
+
 /* Tranfera row vector into a matrix */
 const IMAGE to_Martix(uint8_t* img,const ImageData & id){
     
@@ -713,12 +726,6 @@ const double similarity(const ImagePack img,const Features temp){
 
 /* predict which alphaberts it is  */
 std::string predictAlphberts(ImagePack img,const std::vector<Features> &templatedata){
-    //delete empty line
-    img.image = delteEmptyline(img.image,img.properties);
-    ImagePack2D d2line = depixelize(img.image,img.properties);
-    //klog("saving");
-    save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp___000000.txt");
-    
 
     // loop computing cos with the template data
     double maxv = 0;
@@ -748,7 +755,7 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     //Thresholding(image,id);
     ImagePack2D a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
     save_string(numpylize(nullptr,a.properties,a.image),"cache/numpylizestr.txt");
-    klog("normailize... and set to 1...");
+    klog("thresholding... and set to 1...");
     /* White is 255 , black is 0, therefore ,
     *  after normail, value of white is always large than black
     *  value > mean = white, value < mean = black */
@@ -756,10 +763,9 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     //grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties,&meanx);
     grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,180);   //50
     grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,180); //185
-    klog("save normailzed picture...");
+    klog("save thresholding-ed picture...");
     a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
     save_string(numpylize(nullptr,a.properties,a.image),"cache/normalized.txt");
-    klog("save normailed to file");
     klog("start scanning on y...");
     int *ones_on_y = new int[grayscaleimgpack.properties.height];
     for(int i=0;i<grayscaleimgpack.properties.height;i++){
@@ -825,7 +831,7 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
                 //klog("scling... start:" + to_string(start) + "\tend:" + to_string(end) );
                 IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
                 ImagePack imp = {imx,{end-start,sen.properties.height,1}};
-                //imp.image = enhanceImage(imp.image,imp.properties);
+                imp.image = reverseImageBit(imp.image,imp.properties);
                 //printMatrix(imp.image,imp.properties);
                 //klog("depixelize");
                 ImagePack2D d2line = depixelize(imp.image,imp.properties);
@@ -859,6 +865,12 @@ std::string recognize(const DLISTIMAGEPACK& data){
     for(int i=0;i<data.size();i++){
         LISTIMAGEPACK alpha = data[i];
         for(int j=0;j<alpha.size();j++){
+            //delete empty line
+            alpha[j].image = delteEmptyline(alpha[j].image,alpha[j].properties);
+            ImagePack2D d2line = depixelize(alpha[j].image,alpha[j].properties);
+            //klog("saving");
+            save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp___000000_"
+                                                                                +to_string(i) + to_string(j)+".txt");
             std::string re = predictAlphberts(alpha[j],templatedata);
             result += re;
         }

@@ -33,8 +33,8 @@ int main(int argc,char**argv){
                             cout<<"To grayscale...\t";
                             ImagePack imagex = to_grayScale(image,a);
                             cout<<"normalizing...\t";
-                            imagex.image = set_lessThan2Value(imagex.image,imagex.properties,1,180);   //50
-                            imagex.image = set_largeThan2Value(imagex.image,imagex.properties,0,180); //185
+                            imagex.image = set_lessThan2Value(imagex.image,imagex.properties,0,180);   //50
+                            imagex.image = set_largeThan2Value(imagex.image,imagex.properties,1,180); //185
 
                             //perform count image projection match
                             cout<<"scale to fit...\t";
