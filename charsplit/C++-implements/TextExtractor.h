@@ -720,18 +720,21 @@ MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
     return result;
 }
 /* compute similarity */
-const double similarity(const ImagePack img,const Features temp){
+const double similarity(const Features img,const Features temp){
+
     return 0.0;
 }
 
 /* predict which alphaberts it is  */
 std::string predictAlphberts(ImagePack img,const std::vector<Features> &templatedata){
+    // get feature
+    Features f = feature_extractor_projectionmatch(img.image,img.properties,"");
 
+    double maxv = 0;            // stores max similarity
+    std::string current="*";    // stores char which matches to the max similarity
     // loop computing cos with the template data
-    double maxv = 0;
-    std::string current="*";
     for(int i=0;i<templatedata.size();i++){
-        double x = similarity(img,templatedata[i]);
+        double x = similarity(f,templatedata[i]);
         if(x > maxv){
             maxv =x;
             current = templatedata[i].label;
