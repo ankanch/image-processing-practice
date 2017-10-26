@@ -13,12 +13,8 @@
 #include<cmath>
 #include <vector>
 #include <algorithm>
-#include"lib/Eigen/Dense"
-#include"lib/Eigen/Core"
-#include"lib/Eigen/SVD"
 #include"template.h"
 
-using namespace Eigen;
 
 // for debug
 #define ALLOW_DEBUG_MSG             true
@@ -48,7 +44,6 @@ typedef BASE* PIXEL;
 typedef BASE* ALPHABERTS;
 typedef BASE CHANNEL;
 typedef MATRIX  IMAGE;
-typedef Matrix<double, Dynamic, 1> PcaVector;
 typedef std::vector<int> LIST;
 
 typedef ROW IMAGE2D;
@@ -709,7 +704,7 @@ const std::vector<Features> parseTemplateData(std::string data){
     }
     return templatelist;
 }
-/* cast native matrix MATRIX to Eigen Matrix type */
+/* cast native matrix MATRIX to Eigen Matrix type 
 MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
     MatrixXd result(height,width);
     for(int i=0;i<height;i++){
@@ -718,7 +713,7 @@ MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
         }
     }
     return result;
-}
+}/*/
 
 /* minus two feature vectors with the consideration of different font facetype(controled by ratio) */
 /* ratio = template/x_image */
