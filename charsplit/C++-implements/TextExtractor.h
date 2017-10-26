@@ -719,10 +719,33 @@ MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
     }
     return result;
 }
+
+/* minus two feature vectors with the consideration of different font facetype(controled by ratio) */
+/* ratio = template/x_image */
+const std::vector<int> minusVector(const std::vector<int> x,const std::vector<int> templatex,const double ratio){
+    std::vector<int> result;
+    if( ratio>=1 ){
+
+    }else{
+
+    }
+    return result;
+}
+
+/*  */
+const double meanSquaredError(const std::vector<int> container,const double csum){
+    double error = 0.0;
+
+    return error;
+}
+
 /* compute similarity */
 const double similarity(const Features img,const Features temp){
-
-    return 0.0;
+    std::vector<int> x_diff = minusVector( img.x_sum , temp.x_sum , temp.wh_ratio );
+    std::vector<int> y_diff = minusVector( img.y_sum , temp.y_sum , temp.wh_ratio );
+    double x_error = meanSquaredError( x_diff , temp.height );
+    double y_error = meanSquaredError( y_diff , temp.width );
+    return 1.0 - (x_error + y_error) ;
 }
 
 /* predict which alphaberts it is  */
