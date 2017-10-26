@@ -24,7 +24,11 @@ public class ImageHelper {
         for(int i=0;i<im.height;i++){
             for(int j=0;j<im.width;j++){
                 int value = im.imagepixel[i][j];
-                image.setPixel(j,i,Color.rgb(value,value,value) );
+                if(value == 1){
+                    image.setPixel(j,i,Color.rgb(0,0,0) );
+                }else{
+                    image.setPixel(j,i,Color.rgb(255,255,255) );
+                }
             }
         }
         return image;

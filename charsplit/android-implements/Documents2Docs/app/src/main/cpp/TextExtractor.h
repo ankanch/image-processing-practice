@@ -704,33 +704,57 @@ const std::vector<Features> parseTemplateData(std::string data){
     }
     return templatelist;
 }
+/* cast native matrix MATRIX to Eigen Matrix type
+MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
+    MatrixXd result(height,width);
+    for(int i=0;i<height;i++){
+        for(int j=0;j<width;j++){
+            result(i,j) = mat[i][j][0];
+        }
+    }
+    return result;
+}/*/
 
 /* minus two feature vectors with the consideration of different font facetype(controled by ratio) */
 /* ratio = template/x_image */
-const std::vector<int> minusVector(const std::vector<int> x,const std::vector<int> templatex,const double ratio){
+const std::vector<int> minusVector(const std::vector<int> x,const std::vector<int> templatex){
+    /* sampling from long to short one */
     std::vector<int> result;
+    const double ratio = templatex.size()/x.size();
     if( ratio>=1 ){
-
+        // template is longer than test image, mapping from template to test
+        for(int i=0;i<x.size();i++){
+            int target = int(i*ratio);
+            result.push_back( x[i] - templatex[target] );
+        }
     }else{
-
+        // template is shorter than test image, mapping from test to template
+        for(int i=0;i<templatex.size();i++){
+            int target = int(i*ratio);
+            result.push_back( x[target] - templatex[i] );
+        }
     }
     return result;
 }
 
 /*  */
-const double meanSquaredError(const std::vector<int> container,const double csum){
+const double meanSquaredError(const std::vector<int> con,const double csum){
     double error = 0.0;
-
+    for(int i=0;i<con.size();i++){
+        double xx =  con[i]/csum;
+        error += (xx*xx);
+    }
     return error;
 }
 
 /* compute similarity */
 const double similarity(const Features img,const Features temp){
-    std::vector<int> x_diff = minusVector( img.x_sum , temp.x_sum , temp.wh_ratio );
-    std::vector<int> y_diff = minusVector( img.y_sum , temp.y_sum , temp.wh_ratio );
-    double x_error = meanSquaredError( x_diff , temp.height );
-    double y_error = meanSquaredError( y_diff , temp.width );
-    return 1.0 - (x_error + y_error) ;
+    std::vector<int> x_diff = minusVector( img.x_sum , temp.x_sum );
+    std::vector<int> y_diff = minusVector( img.y_sum , temp.y_sum );
+    double x_error = meanSquaredError( x_diff , temp.width<=img.width?img.width:temp.width );
+    double y_error = meanSquaredError( y_diff , temp.height<=img.height?img.height:temp.height );
+    klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
+    return (x_error + y_error) ;
 }
 
 /* predict which alphaberts it is  */
@@ -738,12 +762,13 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     // get feature
     Features f = feature_extractor_projectionmatch(img.image,img.properties,"");
 
-    double maxv = 0;            // stores max similarity
+    double maxv = 9999999;            // stores max similarity
     std::string current="*";    // stores char which matches to the max similarity
     // loop computing cos with the template data
     for(int i=0;i<templatedata.size();i++){
         double x = similarity(f,templatedata[i]);
-        if(x > maxv){
+        klog("similarity:" + to_string(x));
+        if(x < maxv){
             maxv =x;
             current = templatedata[i].label;
         }

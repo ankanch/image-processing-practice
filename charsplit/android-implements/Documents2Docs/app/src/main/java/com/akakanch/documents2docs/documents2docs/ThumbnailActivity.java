@@ -98,7 +98,9 @@ public class ThumbnailActivity extends AppCompatActivity {
         protected String doInBackground(Bitmap... bitmaps) {
             Bitmap image = bitmaps[0];
             int[] iimg = bmp2ChannelArray(image);
+            Log.v("convert2array","2");
             String result =   RecentScreened.processImageJNI(iimg,image.getWidth(),image.getHeight(),3,2);
+            Log.v("returned","3");
             return result;
         }
 
