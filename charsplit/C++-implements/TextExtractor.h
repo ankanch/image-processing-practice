@@ -620,7 +620,7 @@ Features feature_extractor_projectionmatch(IMAGE img,ImageData&id,std::string la
         for(int j=0;j<id.width;j++){
             if( int(img[i][j][0]) == 0 ){ // black color, with data
                 ++ycount;
-                ++xsum[j];
+                ++(xsum[j]);
             }
         }
         ysum.push_back(ycount);
@@ -717,28 +717,28 @@ MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
 
 /* minus two feature vectors with the consideration of different font facetype(controled by ratio) */
 /* ratio = template/x_image */
-const std::vector<int> minusVector(const std::vector<int> x,const std::vector<int> templatex){
+const std::vector<double> minusVector(const std::vector<int> x,const std::vector<int> templatex,const double payoff){
     /* sampling from long to short one */
-    std::vector<int> result;
+    std::vector<double> result;
     const double ratio = templatex.size()/x.size();
     if( ratio>=1 ){
         // template is longer than test image, mapping from template to test
         for(int i=0;i<x.size();i++){
             int target = int(i*ratio);
-            result.push_back( x[i] - templatex[target] );
+            result.push_back( (x[i] - templatex[target])*payoff );
         }
     }else{
         // template is shorter than test image, mapping from test to template
         for(int i=0;i<templatex.size();i++){
             int target = int(i*ratio);
-            result.push_back( x[target] - templatex[i] );
+            result.push_back( (x[target] - templatex[i])*payoff );
         }
     }
     return result;
 }
 
 /*  */
-const double meanSquaredError(const std::vector<int> con,const double csum){
+const double meanSquaredError(const std::vector<double> con,const double csum){
     double error = 0.0;
     for(int i=0;i<con.size();i++){
         double xx =  con[i]/csum;
@@ -747,14 +747,18 @@ const double meanSquaredError(const std::vector<int> con,const double csum){
     return error;
 }
 
+const double payoff(const int a,const int b){
+    return (a>=b?b:a)*1.0 /  (a>=b?a:b)*1.0 ;
+}
+
 /* compute similarity */
 const double similarity(const Features img,const Features temp){
-    std::vector<int> x_diff = minusVector( img.x_sum , temp.x_sum );
-    std::vector<int> y_diff = minusVector( img.y_sum , temp.y_sum );
-    double x_error = meanSquaredError( x_diff , temp.width<=img.width?img.width:temp.width );
-    double y_error = meanSquaredError( y_diff , temp.height<=img.height?img.height:temp.height );
-    klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
-    return (x_error + y_error) ;
+    std::vector<double> x_diff = minusVector( img.x_sum , temp.x_sum , payoff( temp.height,img.height ) );
+    std::vector<double> y_diff = minusVector( img.y_sum , temp.y_sum , payoff( temp.width,img.width ) );
+    double x_error = meanSquaredError( x_diff , temp.height<=img.height?img.height:temp.height );
+    double y_error = meanSquaredError( y_diff , temp.width<=img.width?img.width:temp.width );
+    //klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
+    return 1.0 - (x_error + y_error)/2 ;
 }
 
 /* predict which alphaberts it is  */
@@ -762,13 +766,13 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     // get feature
     Features f = feature_extractor_projectionmatch(img.image,img.properties,"");
 
-    double maxv = 9999999;            // stores max similarity
+    double maxv = 0;            // stores max similarity
     std::string current="*";    // stores char which matches to the max similarity
     // loop computing cos with the template data
     for(int i=0;i<templatedata.size();i++){
         double x = similarity(f,templatedata[i]);
         klog("similarity:" + to_string(x));
-        if(x < maxv){
+        if(x > maxv){
             maxv =x;
             current = templatedata[i].label;
         }

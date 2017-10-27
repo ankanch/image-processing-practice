@@ -20,7 +20,7 @@ int main(int argc,char**argv){
                         string fname = string(ent->d_name);
                         size_t found =  fname.find(".jpg");
                         if( found != string::npos   ){
-                            printf ("Reading %s ...\n", ent->d_name);
+                            printf (">>||Reading %s ...\n", ent->d_name);
                             // read image
                             int width=0,height=0,bpp=0;
                             uint8_t* rgb_image = stbi_load( (string(argv[1])  + string(ent->d_name)).c_str(), &width, &height, &bpp, 3);
@@ -30,7 +30,7 @@ int main(int argc,char**argv){
                             IMAGE image =  to_Martix(rgb_image,a);
 
         
-                            cout<<"To grayscale...\t";
+                            cout<<"\t|To grayscale...\t";
                             ImagePack imagex = to_grayScale(image,a);
                             cout<<"normalizing...\t";
                             imagex.image = set_lessThan2Value(imagex.image,imagex.properties,0,180);   //50
@@ -38,16 +38,16 @@ int main(int argc,char**argv){
 
                             //perform count image projection match
                             cout<<"scale to fit...\t";
-                            std::cout << "\ninput size=\th:"<<imagex.properties.height<<"\tw:"<<imagex.properties.width<<std::endl;
+                            std::cout << "\n\t|input size h:"<<imagex.properties.height<<", w:"<<imagex.properties.width<<"\t";
                             imagex.image = delteEmptyline(imagex.image,imagex.properties);
-                            std::cout << "\noutput size=\th:"<<imagex.properties.height<<"\tw:"<<imagex.properties.width<<std::endl;
-                            cout<<"saving...\t";
+                            std::cout << "\t,output size h:"<<imagex.properties.height<<", w:"<<imagex.properties.width<<"\t";
+                            cout<<"\tsaving...\t";
                             ImagePack2D d2line = depixelize(imagex.image,imagex.properties);
                             //klog("saving");
                             save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/template_scale2fit_"+ to_string(++i) + ".txt");                    
 
                             // scale image to the same size
-                            cout<<"get projection and width-height ration features ...\t";
+                            cout<<"\t|get projection and width-height ration features ...\t";
                             Features f =  feature_extractor_projectionmatch(imagex.image,imagex.properties,to_string(fname[0]));
                             cout<<"converting to string ...\n";
                             std::string strx = feature2string(f);
