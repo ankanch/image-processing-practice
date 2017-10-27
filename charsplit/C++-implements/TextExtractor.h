@@ -15,7 +15,7 @@
 
 
 // for debug
-#define ALLOW_DEBUG_MSG             true
+#define ALLOW_DEBUG_MSG             false
 #define ALLOW_DEBUG_FILE_STORAGE    false
 
 // control lower boundary
@@ -107,6 +107,15 @@ void klog(T msg,const bool newline=true){
     }
 }
 
+template <typename T>
+void printVector(std::vector<T> v,std::string name=""){
+    std::cout<<"Vector "<<name<<" : ";
+    for(int i=0;i<v.size();i++){
+        std::cout<<v[i]<<",";
+    }
+    std::cout<<std::endl;
+}
+
 /* Calucate average of a given array (row vector) */
 BASE avg(const PIXEL p,const uint8_t channels){
     int sum = 0;
@@ -123,8 +132,6 @@ long sum(const PIXEL p,const uint8_t channels){
     }
     return sum;
 }
-
-
 
 /* save image to file */
 void save2File(const IMAGE image,const ImageData &id,const std::string des="image.txt"){
@@ -616,7 +623,7 @@ Features feature_extractor_projectionmatch(IMAGE img,ImageData&id,std::string la
     for(int i=0;i<id.height;i++){
         int ycount = 0;
         for(int j=0;j<id.width;j++){
-            if( int(img[i][j][0]) == 0 ){ // black color, with data
+            if( int(img[i][j][0]) == 0 ){ // 0 for data , 1 for background
                 ++ycount;
                 ++(xsum[j]);
             }
@@ -670,13 +677,13 @@ Features string2feature(std::string s){
     std::vector<std::string> values = split_string(dataframe[0],",");
     std::vector<int> xsum;
     for(int i=0;i<values.size();i++){
-        xsum.push_back(atoi(values[i].c_str()));
+        xsum.push_back( atoi( values[i].c_str() ) );
     }
     //parse y_sum
     values = split_string(dataframe[1],",");
     std::vector<int> ysum;
     for(int i=0;i<values.size();i++){
-        ysum.push_back(atoi(values[i].c_str()));
+        ysum.push_back( atoi( values[i].c_str() ) );
     }
     f.x_sum = xsum;
     f.y_sum = ysum;
@@ -702,36 +709,44 @@ const std::vector<Features> parseTemplateData(std::string data){
     }
     return templatelist;
 }
-/* cast native matrix MATRIX to Eigen Matrix type 
-MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
-    MatrixXd result(height,width);
-    for(int i=0;i<height;i++){
-        for(int j=0;j<width;j++){
-            result(i,j) = mat[i][j][0];
-        }
-    }
-    return result;
-}/*/
 
-/* minus two feature vectors with the consideration of different font facetype(controled by ratio) */
-/* ratio = template/x_image */
-const std::vector<double> minusVector(const std::vector<int> x,const std::vector<int> templatex,const double payoff){
-    /* sampling from long to short one */
+
+/* minus two feature vectors with the consideration of different font size */
+const std::vector<double> minusWithScale(const std::vector<int> x,const std::vector<int> templatex,const double payoff){
     std::vector<double> result;
-    const double ratio = templatex.size()/x.size();
-    if( ratio>=1 ){
-        // template is longer than test image, mapping from template to test
-        for(int i=0;i<x.size();i++){
-            int target = int(i*ratio);
-            result.push_back( (x[i] - templatex[target])*payoff );
+    // compress longer vector to align with the shorter one
+    if( x.size() >= templatex.size() ){ 
+        // compress x
+        const double mapping_size = x.size()/templatex.size();
+        for(int i=0;i<templatex.size();i++){
+            int base = int(i*mapping_size);
+            int upper = int(base+mapping_size);
+            int sumx = 0;
+            for(int j=base;j<upper;j++){
+                sumx += templatex[j];
+            }
+            sumx /= (upper-base);
+            result.push_back( sumx*payoff - x[i] );
         }
     }else{
-        // template is shorter than test image, mapping from test to template
-        for(int i=0;i<templatex.size();i++){
-            int target = int(i*ratio);
-            result.push_back( (x[target] - templatex[i])*payoff );
+        // compress template
+        const double mapping_size =templatex.size()/x.size();
+        for(int i=0;i<x.size();i++){
+            int base = int(i*mapping_size);
+            int upper = int(base+mapping_size);
+            int sumx = 0;
+            for(int j=base;j<=int(base+mapping_size);j++){
+                sumx += x[j];
+            }
+            sumx /= (upper-base);
+            result.push_back( sumx*payoff - templatex[i] );
         }
     }
+
+    klog("payoff=" + to_string(payoff));
+    printVector(x,"x");
+    printVector(templatex,"templatex");
+    printVector(result,"minusWithScale");
     return result;
 }
 
@@ -746,17 +761,24 @@ const double meanSquaredError(const std::vector<double> con,const double csum){
 }
 
 const double payoff(const int a,const int b){
-    return (a>=b?b:a)*1.0 /  (a>=b?a:b)*1.0 ;
+    return ((a>=b?b:a)*1.0) /  ((a>=b?a:b)*1.0) ;
+}
+
+
+/* compute similarity based on width and height ratio*/
+const double error_feature_WHR(const Features img,const Features temp){
+    return std::abs( img.wh_ratio - temp.wh_ratio );
 }
 
 /* compute similarity */
 const double similarity(const Features img,const Features temp){
-    std::vector<double> x_diff = minusVector( img.x_sum , temp.x_sum , payoff( temp.height,img.height ) );
-    std::vector<double> y_diff = minusVector( img.y_sum , temp.y_sum , payoff( temp.width,img.width ) );
+    std::vector<double> x_diff = minusWithScale( img.x_sum , temp.x_sum , payoff( temp.height,img.height ) );
+    std::vector<double> y_diff = minusWithScale( img.y_sum , temp.y_sum , payoff( temp.width,img.width ) );
     double x_error = meanSquaredError( x_diff , temp.height<=img.height?img.height:temp.height );
     double y_error = meanSquaredError( y_diff , temp.width<=img.width?img.width:temp.width );
     //klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
-    return 1.0 - (x_error + y_error)/2 ;
+    //const double efwhr = error_feature_WHR(img,temp);
+    return 1.0 - ((x_error + y_error)/2 ) ;
 }
 
 /* predict which alphaberts it is  */
@@ -770,7 +792,7 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     for(int i=0;i<templatedata.size();i++){
         double x = similarity(f,templatedata[i]);
         klog("similarity:" + to_string(x));
-        if(x > maxv){
+        if( (std::abs(x) >= std::abs(maxv)) ){
             maxv =x;
             current = templatedata[i].label;
         }
@@ -794,11 +816,7 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     ImagePack2D a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
     save_string(numpylize(nullptr,a.properties,a.image),"cache/numpylizestr.txt");
     klog("thresholding... and set to 1...");
-    /* White is 255 , black is 0, therefore ,
-    *  after normail, value of white is always large than black
-    *  value > mean = white, value < mean = black */
-    //BASE meanx = 0;
-    //grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties,&meanx);
+    /* 1 for background, 0 for data */
     grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,180);   //50
     grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,180); //185
     klog("save thresholding-ed picture...");
@@ -911,6 +929,7 @@ std::string recognize(const DLISTIMAGEPACK& data){
                                                                                 +to_string(i) + to_string(j)+".txt");
             std::string re = predictAlphberts(alpha[j],templatedata);
             result += re;
+            //return result;
         }
     }
     return result;

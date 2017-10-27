@@ -16,19 +16,12 @@ int main(int argc,char**argv){
     cout<<">>Reading image"<<endl;
     int width, height, bpp;
     
-    uint8_t* rgb_image = stbi_load("data/template.jpg", &width, &height, &bpp, 3);
+    uint8_t* rgb_image = stbi_load("data/testxxx.jpg", &width, &height, &bpp, 3);
 
     ImageData a = {width,height,bpp};
     klog(width);
     klog(height);
     klog(bpp);
-    IMAGE image =  to_Martix(rgb_image,a);
-    IMAGE subimage = sliceSubMatrix3D(image,a,50,60,90,100);
-    ImageData b = {10,10,1};
-    ImagePack2D i2d = depixelize(subimage,b);
-    printMatrix(nullptr,i2d.properties,i2d.image);
-    string npstr = numpylize(nullptr,i2d.properties,i2d.image);
-    save_string(npstr,"cache/numpylizestr.txt");
     
     // extract single alphaberts image
     DLISTIMAGEPACK p = extractText(rgb_image,a);

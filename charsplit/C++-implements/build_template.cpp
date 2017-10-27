@@ -41,6 +41,7 @@ int main(int argc,char**argv){
                             std::cout << "\n\t|input size h:"<<imagex.properties.height<<", w:"<<imagex.properties.width<<"\t";
                             imagex.image = delteEmptyline(imagex.image,imagex.properties);
                             std::cout << "\t,output size h:"<<imagex.properties.height<<", w:"<<imagex.properties.width<<"\t";
+                            imagex.image = reverseImageBit(imagex.image,imagex.properties); // reverse, 0 for data, 1 for background
                             cout<<"\tsaving...\t";
                             ImagePack2D d2line = depixelize(imagex.image,imagex.properties);
                             //klog("saving");
