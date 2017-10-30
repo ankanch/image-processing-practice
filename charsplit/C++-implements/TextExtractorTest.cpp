@@ -16,7 +16,7 @@ int main(int argc,char**argv){
     cout<<">>Reading image"<<endl;
     int width, height, bpp;
     
-    uint8_t* rgb_image = stbi_load("data/testxxx.jpg", &width, &height, &bpp, 3);
+    uint8_t* rgb_image = stbi_load("data/template.jpg", &width, &height, &bpp, 3);
 
     ImageData a = {width,height,bpp};
     klog(width);

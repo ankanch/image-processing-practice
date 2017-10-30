@@ -786,8 +786,8 @@ const double similarity(const Features img,const Features temp){
     double x_error = meanSquaredError( x_diff , temp.height<=img.height?img.height:temp.height );
     double y_error = meanSquaredError( y_diff , temp.width<=img.width?img.width:temp.width );
     klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
-    //const double efwhr = error_feature_WHR(img,temp);
-    return 1.0 - ((x_error + y_error)/2 ) ;
+    const double efwhr = error_feature_WHR(img,temp);
+    return 1.0 - ( 0.75*(x_error + y_error) + 0.25*efwhr ) ;
 }
 
 /* predict which alphaberts it is  */
