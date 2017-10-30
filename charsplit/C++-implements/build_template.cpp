@@ -5,7 +5,6 @@
 
 using namespace std;
 
-
 /* this function is used to build template for alphberts recognize */
 int main(int argc,char**argv){
     if(argc == 2){
@@ -38,8 +37,9 @@ int main(int argc,char**argv){
 
                             //perform count image projection match
                             cout<<"scale to fit...\t";
+                            //imagex.image = reverseImageBit(imagex.image,imagex.properties); // reverse, 0 for data, 1 for background
                             std::cout << "\n\t|input size h:"<<imagex.properties.height<<", w:"<<imagex.properties.width<<"\t";
-                            imagex.image = delteEmptyline(imagex.image,imagex.properties);
+                            imagex.image = delteEmptyline(imagex.image,imagex.properties,0);
                             std::cout << "\t,output size h:"<<imagex.properties.height<<", w:"<<imagex.properties.width<<"\t";
                             imagex.image = reverseImageBit(imagex.image,imagex.properties); // reverse, 0 for data, 1 for background
                             cout<<"\tsaving...\t";
@@ -52,6 +52,7 @@ int main(int argc,char**argv){
                             Features f =  feature_extractor_projectionmatch(imagex.image,imagex.properties,to_string(fname[0]));
                             cout<<"converting to string ...\n";
                             std::string strx = feature2string(f);
+                            klog(strx);
                             result += strx + "#";
 
         

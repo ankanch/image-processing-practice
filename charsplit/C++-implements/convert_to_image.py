@@ -21,6 +21,10 @@ else:
             with open(sys.argv[1] + image,"r") as ff:
                 data = ff.read().replace("\n","").replace("\t","")
                 t = eval(data)
+                ss = []
+                for row in t:
+                    ss.append( [ 1 if x==0 else 0 for x in row ] )
+                t = ss
                 img = np.asarray(t)
                 plt.imsave(img_des + "/" + image[:image.find(".")] + ".jpg" ,img,cmap="gray")
         else:

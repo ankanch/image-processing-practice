@@ -109,11 +109,13 @@ void klog(T msg,const bool newline=true){
 
 template <typename T>
 void printVector(std::vector<T> v,std::string name=""){
-    std::cout<<"Vector "<<name<<" : ";
-    for(int i=0;i<v.size();i++){
-        std::cout<<v[i]<<",";
+    if(ALLOW_DEBUG_MSG){
+        std::cout<<"Vector "<<name<<" : ";
+        for(int i=0;i<v.size();i++){
+            std::cout<<v[i]<<",";
+        }
+        std::cout<<std::endl;
     }
-    std::cout<<std::endl;
 }
 
 /* Calucate average of a given array (row vector) */
@@ -159,7 +161,7 @@ void save2File(const IMAGE image,const ImageData &id,const std::string des="imag
 /* print Matrix to console */
 /* can print pixelize and depixelize */
 void printMatrix(const MATRIX mat3d,const ImageData&id,const IMAGE2D mat2d=nullptr){
-    if(ALLOW_DEBUG_FILE_STORAGE){
+    if(ALLOW_DEBUG_MSG){
         std::cout<<"[";
         if(id.channel > 0){
             MATRIX mat = mat3d;
@@ -409,35 +411,37 @@ const ImagePack2D depixelize(const IMAGE image,const ImageData& id){
 
 /* make an matrix avaliable to show as image in python */
 const std::string numpylize(const IMAGE mat3d,const ImageData& id,const IMAGE2D mat2d=nullptr){
-    klog("numpylizing...");
     std::string numpylizedstring = "";
-    if(id.channel > 0){
-        MATRIX mat = mat3d;
-        for(int i =0;i<id.height;i++){
-            numpylizedstring += "[";
-            for(int j=0;j<id.width;j++){
+    if(ALLOW_DEBUG_FILE_STORAGE){
+        klog("numpylizing...");
+        if(id.channel > 0){
+            MATRIX mat = mat3d;
+            for(int i =0;i<id.height;i++){
                 numpylizedstring += "[";
-                for(int c=0;c<id.channel;c++){
-                    numpylizedstring += to_string(int(mat[i][j][c])) + ",";
+                for(int j=0;j<id.width;j++){
+                    numpylizedstring += "[";
+                    for(int c=0;c<id.channel;c++){
+                        numpylizedstring += to_string(int(mat[i][j][c])) + ",";
+                    }
+                    numpylizedstring.pop_back();
+                    numpylizedstring += "],";
                 }
                 numpylizedstring.pop_back();
                 numpylizedstring += "],";
             }
-            numpylizedstring.pop_back();
-            numpylizedstring += "],";
+        }else{
+            IMAGE2D mat = mat2d;
+            for(int i =0;i<id.height;i++){
+                numpylizedstring += "[";
+                for(int j=0;j<id.width;j++){
+                    numpylizedstring += to_string(int(mat[i][j])) + ",";
+                }
+                numpylizedstring.pop_back();
+                numpylizedstring += "],";
+            }  
         }
-    }else{
-        IMAGE2D mat = mat2d;
-        for(int i =0;i<id.height;i++){
-            numpylizedstring += "[";
-            for(int j=0;j<id.width;j++){
-                numpylizedstring += to_string(int(mat[i][j])) + ",";
-            }
-            numpylizedstring.pop_back();
-            numpylizedstring += "],";
-        }  
+        numpylizedstring.pop_back();
     }
-    numpylizedstring.pop_back();
     numpylizedstring += "]";
     return "[" + numpylizedstring;
 }
@@ -534,8 +538,7 @@ const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
 }
 
 /* delete empty line of an image */
-const IMAGE delteEmptyline(IMAGE image,ImageData&id){
-    int del_target = 1;
+const IMAGE delteEmptyline(IMAGE image,ImageData&id,const int del_target=1){
     int countx = 0;
     int del_line=0;
     // scan on top
@@ -723,10 +726,11 @@ const std::vector<double> minusWithScale(const std::vector<int> x,const std::vec
             int upper = int(base+mapping_size);
             int sumx = 0;
             for(int j=base;j<upper;j++){
-                sumx += templatex[j];
+                sumx += x[j];
             }
             sumx /= (upper-base);
-            result.push_back( sumx*payoff - x[i] );
+            klog("i=" + to_string(i) + "\t,x.size=" + to_string(x.size()) + "\t,x[i]=" + to_string(x[i]) + "\t,sumx=" + to_string(sumx));
+            result.push_back( sumx*payoff - templatex[i] );
         }
     }else{
         // compress template
@@ -735,11 +739,13 @@ const std::vector<double> minusWithScale(const std::vector<int> x,const std::vec
             int base = int(i*mapping_size);
             int upper = int(base+mapping_size);
             int sumx = 0;
-            for(int j=base;j<=int(base+mapping_size);j++){
-                sumx += x[j];
+            for(int j=base;j<int(base+mapping_size);j++){
+                sumx += templatex[j];
+                klog("j=" + to_string(j) + "\t,x.size=" + to_string(x.size()) + "\t,x[j]=" + to_string(x[j]));
             }
             sumx /= (upper-base);
-            result.push_back( sumx*payoff - templatex[i] );
+            klog("i=" + to_string(i) + "\t,templatex.size=" + to_string(x.size()) + "\t,templatex=" + to_string(templatex[i]) + "\t,sumx=" + to_string(sumx));
+            result.push_back( sumx*payoff - x[i] );
         }
     }
 
@@ -753,11 +759,14 @@ const std::vector<double> minusWithScale(const std::vector<int> x,const std::vec
 /*  */
 const double meanSquaredError(const std::vector<double> con,const double csum){
     double error = 0.0;
+    std::string logx="";
     for(int i=0;i<con.size();i++){
         double xx =  con[i]/csum;
         error += (xx*xx);
+        logx = logx + "con_i=" + to_string(con[i]) + "\t,csum=" + to_string(csum) + "\t,xx=" + to_string(xx) + "\n";
     }
-    return error;
+    klog(logx);
+    return error/con.size();
 }
 
 const double payoff(const int a,const int b){
@@ -776,7 +785,7 @@ const double similarity(const Features img,const Features temp){
     std::vector<double> y_diff = minusWithScale( img.y_sum , temp.y_sum , payoff( temp.width,img.width ) );
     double x_error = meanSquaredError( x_diff , temp.height<=img.height?img.height:temp.height );
     double y_error = meanSquaredError( y_diff , temp.width<=img.width?img.width:temp.width );
-    //klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
+    klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
     //const double efwhr = error_feature_WHR(img,temp);
     return 1.0 - ((x_error + y_error)/2 ) ;
 }
@@ -790,9 +799,10 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     std::string current="*";    // stores char which matches to the max similarity
     // loop computing cos with the template data
     for(int i=0;i<templatedata.size();i++){
+        klog("------------------round " + to_string(i) + "\tlabel=" + templatedata[i].label );
         double x = similarity(f,templatedata[i]);
         klog("similarity:" + to_string(x));
-        if( (std::abs(x) >= std::abs(maxv)) ){
+        if( (x) >= (maxv) ){
             maxv =x;
             current = templatedata[i].label;
         }
@@ -888,10 +898,8 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
                 IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
                 ImagePack imp = {imx,{end-start,sen.properties.height,1}};
                 imp.image = reverseImageBit(imp.image,imp.properties);
-                //printMatrix(imp.image,imp.properties);
-                //klog("depixelize");
+
                 ImagePack2D d2line = depixelize(imp.image,imp.properties);
-                //klog("saving");
                 save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp_"+ to_string(i+1) + to_string(j+1) + ".txt");
                 alpha.push_back(imp);
             }
@@ -904,9 +912,6 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     delete[] ones_on_y;
     deleteMatrix(image,id);
     deleteMatrix(grayscaleimgpack.image,grayscaleimgpack.properties);
-    //klog("mean= " + to_string(int(meanx)));
-
-
     return alphaberts;
 }
 
@@ -929,6 +934,7 @@ std::string recognize(const DLISTIMAGEPACK& data){
                                                                                 +to_string(i) + to_string(j)+".txt");
             std::string re = predictAlphberts(alpha[j],templatedata);
             result += re;
+            printMatrix(alpha[j].image,alpha[j].properties);
             //return result;
         }
     }
