@@ -12,4 +12,5 @@ template: build_template.cpp
 
 clean: 
 	del .\cache\* /s
+	del template_builder.exe testapp.exe
 

@@ -1,7 +1,12 @@
 package com.akakanch.documents2docs.documents2docs;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
@@ -9,8 +14,14 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -18,6 +29,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
@@ -25,6 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class RecentScreened extends AppCompatActivity {
@@ -36,10 +49,15 @@ public class RecentScreened extends AppCompatActivity {
 
     static String imagePath = "Documents2Docs";
     static String last_taken_pictures_abpath = "";
+    static String last_taken_pictures_name = "";
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_PICK_IMAGE = 2;
 
-    private ImageView ivtest;
+    private ListView lvrecent;
+    private ArrayList<RecentItem> al_recent = new ArrayList<RecentItem>();
+    private ArrayAdapter<RecentItem> aa_recent;
+    private DatabaseHelper dbhelper;
+    private SQLiteDatabase db ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,12 +66,14 @@ public class RecentScreened extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        dbhelper = new DatabaseHelper(getApplicationContext());
+        lvrecent = (ListView)findViewById(R.id.listview_recent);
+        checkAndRequestPermission();
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         FloatingActionButton fab_add  = (FloatingActionButton)findViewById(R.id.fab_open);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG).setAction("Action", null).show();
                 dispatchTakePictureIntent();
             }
         });
@@ -66,8 +86,33 @@ public class RecentScreened extends AppCompatActivity {
             }
         });
 
-        ivtest = (ImageView)findViewById(R.id.imageView);
         createDirIfNotExists(imagePath);
+        // connect to database
+        db = dbhelper.getWritableDatabase();
+        al_recent = dbhelper.getAllRecentItem(db);
+        if(al_recent.size() == 0){
+            al_recent.add(new RecentItem("No Recent Image Found","null",
+                    Bitmap.createBitmap(128,128,Bitmap.Config.ARGB_8888),"null"));
+        }else{
+            // load all thumbnail of these images
+            for(int i=0;i<al_recent.size();i++){
+                Log.v("getting-thunbnail=",al_recent.get(i).fpath);
+                if(al_recent.get(i).fpath.indexOf("content:") >= 0) {
+                    al_recent.get(i).thumbnail = scaleBitmap(getPicture(Uri.parse(al_recent.get(i).fpath)),0.1f);
+                }else{
+                    al_recent.get(i).thumbnail = scaleBitmap(getPicture(al_recent.get(i).fpath),0.1f);
+                }
+            }
+        }
+        aa_recent = new RecentItemAdaptor(getApplicationContext(),al_recent);
+        lvrecent.setAdapter(aa_recent);
+        lvrecent.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                RecentItem ri = (RecentItem)adapterView.getItemAtPosition(i);
+                Snackbar.make(view,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
+            }
+        });
     }
 
     @Override
@@ -118,18 +163,27 @@ public class RecentScreened extends AppCompatActivity {
                 Bitmap imageBitmap = getPicture( last_taken_pictures_abpath );
                 imageBitmap = compressAsJPG(imageBitmap);
                 imageBitmap = scaleBitmap(imageBitmap,0.4f);
-                ivtest.setImageBitmap(imageBitmap);
                 ThumbnailActivity.target_image = imageBitmap;
                 Intent confirm_screen = new Intent(getApplicationContext(), ThumbnailActivity.class);
+                //add data to recentscreened
+                RecentItem ri = new RecentItem(last_taken_pictures_name,"",imageBitmap,last_taken_pictures_abpath);
+                dbhelper.insertRecentItem(db,ri);
+                aa_recent.add(ri);
+                // goto process activity
                 startActivity(confirm_screen);
             }else if( requestCode == REQUEST_PICK_IMAGE ){
                 Toast.makeText(this,"open image" + data.getData(), Toast.LENGTH_LONG).show();
-                //open image and pass it to the C++ function
                 Bitmap bp = getPicture(data.getData());
                 bp = compressAsJPG(bp);
                 ThumbnailActivity.target_image = bp;
                 Intent confirm_screen = new Intent(getApplicationContext(), ThumbnailActivity.class);
-                ivtest.setImageBitmap(bp);
+                //add data to recentscreened
+                String furi = data.getData().toString();
+                File f = new File(furi);
+                RecentItem ri = new RecentItem(f.getName() ,"",bp,furi);
+                dbhelper.insertRecentItem(db,ri);
+                aa_recent.add(ri);
+                // goto process activity
                 startActivity(confirm_screen);
             }
         }
@@ -194,7 +248,37 @@ public class RecentScreened extends AppCompatActivity {
                 storageDir      /* directory */
         );
         last_taken_pictures_abpath = image.getAbsolutePath();
+        last_taken_pictures_name = imageFileName;
         return image;
+    }
+
+
+    // check and request permission for the first run
+    private void checkAndRequestPermission(){
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1111);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case 1111: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this,"Permission Granted.",Toast.LENGTH_LONG).show();
+                } else {
+                    // permission denied, boo!
+                    Toast.makeText(this,"We need WRITE STORAGE permission to work properly!",Toast.LENGTH_LONG).show();
+                }
+                return;
+            }
+        }
     }
 
     /**

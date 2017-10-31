@@ -7,8 +7,6 @@ This is the C++ implementation of character segmentation.
 ## Third Parth Module
 
 * stb_image.h
-* stb_image_write.h
-* Eigen (not use anymore)
 
 ## Useage
 
@@ -21,4 +19,5 @@ below shows complmentation status.
 * **PASS**：Character segmentation      
 * **PASS**：Building character template 
 * **PASS**：Lading template and transfer input to alowed format
-* **——**：Recognize
+* **PASS**：Recognize
+* **____**: 

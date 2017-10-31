@@ -23,7 +23,7 @@
 
 
 /*****************************************************************************\
-***                                                                        ***\
+***                                                                        ***\   
 ***                          Text Extractor                                ***\
 ***           This can help to to split alphaberts from an image.          ***\
 ***                    by Kanch at http://akakanch.com                     ***\
@@ -95,7 +95,7 @@ std::string to_string(T value)
     return os.str() ;
 }
 
-/* used to display debug message,
+/* used to display debug message, 
 you can turn it off by setting macro ALLOW_DEBUG_MSG to 0 */
 template <typename T>
 void klog(T msg,const bool newline=true){
@@ -104,6 +104,17 @@ void klog(T msg,const bool newline=true){
         if(newline){
             std::cout<<std::endl;
         }
+    }
+}
+
+template <typename T>
+void printVector(std::vector<T> v,std::string name=""){
+    if(ALLOW_DEBUG_MSG){
+        std::cout<<"Vector "<<name<<" : ";
+        for(int i=0;i<v.size();i++){
+            std::cout<<v[i]<<",";
+        }
+        std::cout<<std::endl;
     }
 }
 
@@ -123,8 +134,6 @@ long sum(const PIXEL p,const uint8_t channels){
     }
     return sum;
 }
-
-
 
 /* save image to file */
 void save2File(const IMAGE image,const ImageData &id,const std::string des="image.txt"){
@@ -152,7 +161,7 @@ void save2File(const IMAGE image,const ImageData &id,const std::string des="imag
 /* print Matrix to console */
 /* can print pixelize and depixelize */
 void printMatrix(const MATRIX mat3d,const ImageData&id,const IMAGE2D mat2d=nullptr){
-    if(ALLOW_DEBUG_FILE_STORAGE){
+    if(ALLOW_DEBUG_MSG){
         std::cout<<"[";
         if(id.channel > 0){
             MATRIX mat = mat3d;
@@ -175,7 +184,7 @@ void printMatrix(const MATRIX mat3d,const ImageData&id,const IMAGE2D mat2d=nullp
                     std::cout<< int(mat[i][j]) <<",";
                 }
                 std::cout<<"\b] "<<std::endl;
-            }
+            }  
         }
         std::cout<<"]"<<std::endl;
     }
@@ -203,9 +212,9 @@ const IMAGE normalize(IMAGE image,const ImageData& id,BASE* mean){
 const IMAGE set_largeThan2Value(IMAGE image,const ImageData& id,const uint8_t value,const int threshold){
     for(int i=0;i<id.height;i++){
         for(int j=0;j<id.width;j++){
-            if( int(image[i][j][0]) >= threshold ){
-                image[i][j][0] = value;
-            }
+                if( int(image[i][j][0]) >= threshold ){
+                        image[i][j][0] = value;
+                }
         }
     }
     return image;
@@ -214,9 +223,9 @@ const IMAGE set_largeThan2Value(IMAGE image,const ImageData& id,const uint8_t va
 const IMAGE set_lessThan2Value(IMAGE image,const ImageData& id,const uint8_t value,const int threshold){
     for(int i=0;i<id.height;i++){
         for(int j=0;j<id.width;j++){
-            if( int(image[i][j][0]) <= threshold ){
-                image[i][j][0] = value;
-            }
+                if( int(image[i][j][0]) <= threshold ){
+                        image[i][j][0] = value;
+                }
         }
     }
     return image;
@@ -251,7 +260,7 @@ const IMAGE reverseImageBit(IMAGE image,const ImageData& id){
 
 /* Tranfera row vector into a matrix */
 const IMAGE to_Martix(uint8_t* img,const ImageData & id){
-
+    
     MATRIX mat = new COLUMN[id.height];
 
     for(int i= 0;i<id.height;i++){
@@ -290,7 +299,7 @@ const IMAGE Thresholding(IMAGE img,const ImageData& id){
     std::vector<int>::iterator max_pos = std::max_element(pixelcount.begin(),pixelcount.end());
     int max_value = 0;
     klog(max_value);
-    // run
+    // run 
     // start split backgroudn color and forecolor
     for(int i=0;i<pixelcount.size();i++){
 
@@ -402,35 +411,37 @@ const ImagePack2D depixelize(const IMAGE image,const ImageData& id){
 
 /* make an matrix avaliable to show as image in python */
 const std::string numpylize(const IMAGE mat3d,const ImageData& id,const IMAGE2D mat2d=nullptr){
-    klog("numpylizing...");
     std::string numpylizedstring = "";
-    if(id.channel > 0){
-        MATRIX mat = mat3d;
-        for(int i =0;i<id.height;i++){
-            numpylizedstring += "[";
-            for(int j=0;j<id.width;j++){
+    if(ALLOW_DEBUG_FILE_STORAGE){
+        klog("numpylizing...");
+        if(id.channel > 0){
+            MATRIX mat = mat3d;
+            for(int i =0;i<id.height;i++){
                 numpylizedstring += "[";
-                for(int c=0;c<id.channel;c++){
-                    numpylizedstring += to_string(int(mat[i][j][c])) + ",";
+                for(int j=0;j<id.width;j++){
+                    numpylizedstring += "[";
+                    for(int c=0;c<id.channel;c++){
+                        numpylizedstring += to_string(int(mat[i][j][c])) + ",";
+                    }
+                    numpylizedstring.pop_back();
+                    numpylizedstring += "],";
                 }
                 numpylizedstring.pop_back();
                 numpylizedstring += "],";
             }
-            numpylizedstring.pop_back();
-            numpylizedstring += "],";
+        }else{
+            IMAGE2D mat = mat2d;
+            for(int i =0;i<id.height;i++){
+                numpylizedstring += "[";
+                for(int j=0;j<id.width;j++){
+                    numpylizedstring += to_string(int(mat[i][j])) + ",";
+                }
+                numpylizedstring.pop_back();
+                numpylizedstring += "],";
+            }  
         }
-    }else{
-        IMAGE2D mat = mat2d;
-        for(int i =0;i<id.height;i++){
-            numpylizedstring += "[";
-            for(int j=0;j<id.width;j++){
-                numpylizedstring += to_string(int(mat[i][j])) + ",";
-            }
-            numpylizedstring.pop_back();
-            numpylizedstring += "],";
-        }
+        numpylizedstring.pop_back();
     }
-    numpylizedstring.pop_back();
     numpylizedstring += "]";
     return "[" + numpylizedstring;
 }
@@ -496,7 +507,7 @@ const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
             // we're processing ImagePack here
             std::string buf = "[";
             std::string properties = to_string(linecontainer[j].properties.width) + "@"
-                                     + to_string(linecontainer[j].properties.height) + "<!>";
+                                    + to_string(linecontainer[j].properties.height) + "<!>";
             //start processing evert channel's pixel now,only work for 1 channel image
             // that is grayscale image
             //int mmm=0;
@@ -512,14 +523,14 @@ const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
                 buf += properties;
                 result += buf;
                 sum++;
-                /*/
-                std::cout<<buf<<std::endl;
-                std::cout<<linecontainer[j].properties.width<<","<<linecontainer[j].properties.height<<std::endl;
-                std::cout<<properties<<std::endl;
-                while(true){
-                    ;
-                }
-                /*/
+                    /*/
+                    std::cout<<buf<<std::endl;
+                    std::cout<<linecontainer[j].properties.width<<","<<linecontainer[j].properties.height<<std::endl;
+                    std::cout<<properties<<std::endl;
+                    while(true){
+                        ;
+                    }
+                    /*/
             }
         }
     }
@@ -527,8 +538,7 @@ const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
 }
 
 /* delete empty line of an image */
-const IMAGE delteEmptyline(IMAGE image,ImageData&id){
-    int del_target = 1;
+const IMAGE delteEmptyline(IMAGE image,ImageData&id,const int del_target=1){
     int countx = 0;
     int del_line=0;
     // scan on top
@@ -616,7 +626,7 @@ Features feature_extractor_projectionmatch(IMAGE img,ImageData&id,std::string la
     for(int i=0;i<id.height;i++){
         int ycount = 0;
         for(int j=0;j<id.width;j++){
-            if( int(img[i][j][0]) == 0 ){ // black color, with data
+            if( int(img[i][j][0]) == 0 ){ // 0 for data , 1 for background
                 ++ycount;
                 ++(xsum[j]);
             }
@@ -665,18 +675,18 @@ std::string feature2string(Features f){
 Features string2feature(std::string s){
     Features f;
     // get x_sum_str,y_sum_str,tatio_str,height_str,width_str,label
-    std::vector<std::string> dataframe = split_string(s,"@");
+    std::vector<std::string> dataframe = split_string(s,"@"); 
     //parse x_sum
     std::vector<std::string> values = split_string(dataframe[0],",");
     std::vector<int> xsum;
     for(int i=0;i<values.size();i++){
-        xsum.push_back(atoi(values[i].c_str()));
+        xsum.push_back( atoi( values[i].c_str() ) );
     }
     //parse y_sum
     values = split_string(dataframe[1],",");
     std::vector<int> ysum;
     for(int i=0;i<values.size();i++){
-        ysum.push_back(atoi(values[i].c_str()));
+        ysum.push_back( atoi( values[i].c_str() ) );
     }
     f.x_sum = xsum;
     f.y_sum = ysum;
@@ -702,61 +712,82 @@ const std::vector<Features> parseTemplateData(std::string data){
     }
     return templatelist;
 }
-/* cast native matrix MATRIX to Eigen Matrix type
-MatrixXd  to_EigenMatrixXd(MATRIX mat,const int width,const int height){
-    MatrixXd result(height,width);
-    for(int i=0;i<height;i++){
-        for(int j=0;j<width;j++){
-            result(i,j) = mat[i][j][0];
-        }
-    }
-    return result;
-}/*/
 
-/* minus two feature vectors with the consideration of different font facetype(controled by ratio) */
-/* ratio = template/x_image */
-const std::vector<double> minusVector(const std::vector<int> x,const std::vector<int> templatex,const double payoff){
-    /* sampling from long to short one */
+
+/* minus two feature vectors with the consideration of different font size */
+const std::vector<double> minusWithScale(const std::vector<int> x,const std::vector<int> templatex,const double payoff){
     std::vector<double> result;
-    const double ratio = templatex.size()/x.size();
-    if( ratio>=1 ){
-        // template is longer than test image, mapping from template to test
-        for(int i=0;i<x.size();i++){
-            int target = int(i*ratio);
-            result.push_back( (x[i] - templatex[target])*payoff );
+    // compress longer vector to align with the shorter one
+    if( x.size() >= templatex.size() ){ 
+        // compress x
+        const double mapping_size = x.size()/templatex.size();
+        for(int i=0;i<templatex.size();i++){
+            int base = int(i*mapping_size);
+            int upper = int(base+mapping_size);
+            int sumx = 0;
+            for(int j=base;j<upper;j++){
+                sumx += x[j];
+            }
+            sumx /= (upper-base);
+            klog("i=" + to_string(i) + "\t,x.size=" + to_string(x.size()) + "\t,x[i]=" + to_string(x[i]) + "\t,sumx=" + to_string(sumx));
+            result.push_back( sumx*payoff - templatex[i] );
         }
     }else{
-        // template is shorter than test image, mapping from test to template
-        for(int i=0;i<templatex.size();i++){
-            int target = int(i*ratio);
-            result.push_back( (x[target] - templatex[i])*payoff );
+        // compress template
+        const double mapping_size =templatex.size()/x.size();
+        for(int i=0;i<x.size();i++){
+            int base = int(i*mapping_size);
+            int upper = int(base+mapping_size);
+            int sumx = 0;
+            for(int j=base;j<int(base+mapping_size);j++){
+                sumx += templatex[j];
+                klog("j=" + to_string(j) + "\t,x.size=" + to_string(x.size()) + "\t,x[j]=" + to_string(x[j]));
+            }
+            sumx /= (upper-base);
+            klog("i=" + to_string(i) + "\t,templatex.size=" + to_string(x.size()) + "\t,templatex=" + to_string(templatex[i]) + "\t,sumx=" + to_string(sumx));
+            result.push_back( sumx*payoff - x[i] );
         }
     }
+
+    klog("payoff=" + to_string(payoff));
+    printVector(x,"x");
+    printVector(templatex,"templatex");
+    printVector(result,"minusWithScale");
     return result;
 }
 
 /*  */
 const double meanSquaredError(const std::vector<double> con,const double csum){
     double error = 0.0;
+    std::string logx="";
     for(int i=0;i<con.size();i++){
         double xx =  con[i]/csum;
         error += (xx*xx);
+        logx = logx + "con_i=" + to_string(con[i]) + "\t,csum=" + to_string(csum) + "\t,xx=" + to_string(xx) + "\n";
     }
-    return error;
+    klog(logx);
+    return error/con.size();
 }
 
 const double payoff(const int a,const int b){
-    return (a>=b?b:a)*1.0 /  (a>=b?a:b)*1.0 ;
+    return ((a>=b?b:a)*1.0) /  ((a>=b?a:b)*1.0) ;
+}
+
+
+/* compute similarity based on width and height ratio*/
+const double error_feature_WHR(const Features img,const Features temp){
+    return std::abs( img.wh_ratio - temp.wh_ratio );
 }
 
 /* compute similarity */
 const double similarity(const Features img,const Features temp){
-    std::vector<double> x_diff = minusVector( img.x_sum , temp.x_sum , payoff( temp.height,img.height ) );
-    std::vector<double> y_diff = minusVector( img.y_sum , temp.y_sum , payoff( temp.width,img.width ) );
+    std::vector<double> x_diff = minusWithScale( img.x_sum , temp.x_sum , payoff( temp.height,img.height ) );
+    std::vector<double> y_diff = minusWithScale( img.y_sum , temp.y_sum , payoff( temp.width,img.width ) );
     double x_error = meanSquaredError( x_diff , temp.height<=img.height?img.height:temp.height );
     double y_error = meanSquaredError( y_diff , temp.width<=img.width?img.width:temp.width );
-    //klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
-    return 1.0 - (x_error + y_error)/2 ;
+    klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
+    const double efwhr = error_feature_WHR(img,temp);
+    return 1.0 - ( 0.75*(x_error + y_error) + 0.25*efwhr ) ;
 }
 
 /* predict which alphaberts it is  */
@@ -768,14 +799,15 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     std::string current="*";    // stores char which matches to the max similarity
     // loop computing cos with the template data
     for(int i=0;i<templatedata.size();i++){
+        klog("------------------round " + to_string(i) + "\tlabel=" + templatedata[i].label );
         double x = similarity(f,templatedata[i]);
         klog("similarity:" + to_string(x));
-        if(x > maxv){
+        if( (x) >= (maxv) ){
             maxv =x;
             current = templatedata[i].label;
         }
     }
-
+    
     // return data
     return current;
 }
@@ -794,11 +826,7 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     ImagePack2D a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
     save_string(numpylize(nullptr,a.properties,a.image),"cache/numpylizestr.txt");
     klog("thresholding... and set to 1...");
-    /* White is 255 , black is 0, therefore ,
-    *  after normail, value of white is always large than black
-    *  value > mean = white, value < mean = black */
-    //BASE meanx = 0;
-    //grayscaleimgpack.image = normalize(grayscaleimgpack.image,grayscaleimgpack.properties,&meanx);
+    /* 1 for background, 0 for data */
     grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,180);   //50
     grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,180); //185
     klog("save thresholding-ed picture...");
@@ -810,7 +838,7 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
         int buf = 0;
         for(int j=0;j<grayscaleimgpack.properties.width;j++){
             if(grayscaleimgpack.image[i][j][0] > 0){
-                ++buf;
+               ++buf;
             }
         }
         ones_on_y[i] = buf;
@@ -870,10 +898,8 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
                 IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
                 ImagePack imp = {imx,{end-start,sen.properties.height,1}};
                 imp.image = reverseImageBit(imp.image,imp.properties);
-                //printMatrix(imp.image,imp.properties);
-                //klog("depixelize");
+
                 ImagePack2D d2line = depixelize(imp.image,imp.properties);
-                //klog("saving");
                 save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp_"+ to_string(i+1) + to_string(j+1) + ".txt");
                 alpha.push_back(imp);
             }
@@ -886,9 +912,6 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     delete[] ones_on_y;
     deleteMatrix(image,id);
     deleteMatrix(grayscaleimgpack.image,grayscaleimgpack.properties);
-    //klog("mean= " + to_string(int(meanx)));
-
-
     return alphaberts;
 }
 
@@ -911,6 +934,8 @@ std::string recognize(const DLISTIMAGEPACK& data){
                                                                                 +to_string(i) + to_string(j)+".txt");
             std::string re = predictAlphberts(alpha[j],templatedata);
             result += re;
+            printMatrix(alpha[j].image,alpha[j].properties);
+            //return result;
         }
     }
     return result;
