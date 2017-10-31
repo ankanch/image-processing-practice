@@ -75,5 +75,35 @@ int main(int argc,char**argv){
                 perror ("");
                 return EXIT_FAILURE;
                 }
+            }else if(argc == 3){
+                // second parameter is the template file
+                // third parameter is the temp split alpheberts output directory
+                cout<<">>Reading template image"<<endl;
+                int width, height, bpp;
+                
+                uint8_t* rgb_image = stbi_load(argv[1], &width, &height, &bpp, 3);
+            
+                ImageData a = {width,height,bpp};
+                string out_dir_prefix = string(argv[2]);
+                
+                // extract single alphaberts image
+                DLISTIMAGEPACK p = extractText(rgb_image,a);
+                int sum = 0;
+                string ss = strinfy(p,sum);
+                cout<<">>width:"<<width<<"\theight:"<<height<<"\tbpp:"<<bpp<<"\tsplit_sum="<<sum<<endl;
+                cout<<"saving..."<<endl;
+                for(int i=0;i<p.size();i++){
+                    LISTIMAGEPACK line = p[i];
+                    for(int j=0;j<line.size();j++){
+                        ImagePack2D d2line = depixelize(line[j].image,line[j].properties);
+                        string data = numpylize( nullptr ,d2line.properties, d2line.image );
+                        string ddir = out_dir_prefix  + "alp_"+ to_string(i+1) + to_string(j+1) + ".txt";
+                        save_string(  data, ddir);
+                    }
+                }
+                cout<<"done."<<endl;
+                stbi_image_free(rgb_image);
+
+
             }
 }

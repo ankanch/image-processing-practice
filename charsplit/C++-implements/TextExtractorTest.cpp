@@ -27,7 +27,6 @@ int main(int argc,char**argv){
     DLISTIMAGEPACK p = extractText(rgb_image,a);
     int sum = 0;
     string ss = strinfy(p,sum);
-    save_stringT(ss,"dta.txt");
     cout<<">>width:"<<width<<"\theight:"<<height<<"\tbpp:"<<bpp<<"\tsplit_sum="<<sum<<endl;
     stbi_image_free(rgb_image);
 
