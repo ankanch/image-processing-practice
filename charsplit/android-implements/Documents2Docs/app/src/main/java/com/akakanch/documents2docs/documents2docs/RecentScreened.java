@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -30,6 +31,7 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
@@ -38,6 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
 public class RecentScreened extends AppCompatActivity {
@@ -89,30 +92,11 @@ public class RecentScreened extends AppCompatActivity {
         createDirIfNotExists(imagePath);
         // connect to database
         db = dbhelper.getWritableDatabase();
-        al_recent = dbhelper.getAllRecentItem(db);
-        if(al_recent.size() == 0){
-            al_recent.add(new RecentItem("No Recent Image Found","null",
-                    Bitmap.createBitmap(128,128,Bitmap.Config.ARGB_8888),"null"));
-        }else{
-            // load all thumbnail of these images
-            for(int i=0;i<al_recent.size();i++){
-                Log.v("getting-thunbnail=",al_recent.get(i).fpath);
-                if(al_recent.get(i).fpath.indexOf("content:") >= 0) {
-                    al_recent.get(i).thumbnail = scaleBitmap(getPicture(Uri.parse(al_recent.get(i).fpath)),0.1f);
-                }else{
-                    al_recent.get(i).thumbnail = scaleBitmap(getPicture(al_recent.get(i).fpath),0.1f);
-                }
-            }
-        }
-        aa_recent = new RecentItemAdaptor(getApplicationContext(),al_recent);
-        lvrecent.setAdapter(aa_recent);
-        lvrecent.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                RecentItem ri = (RecentItem)adapterView.getItemAtPosition(i);
-                Snackbar.make(view,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
-            }
-        });
+        //al_recent = loadRecentImages(db);
+        //aa_recent = new RecentItemAdaptor(getApplicationContext(),al_recent);
+        //lvrecent.setAdapter(aa_recent);
+        new LoadAllRecentInBackground().execute(db);
+        setListenerOnListView(lvrecent);
     }
 
     @Override
@@ -168,7 +152,7 @@ public class RecentScreened extends AppCompatActivity {
                 //add data to recentscreened
                 RecentItem ri = new RecentItem(last_taken_pictures_name,"",imageBitmap,last_taken_pictures_abpath);
                 dbhelper.insertRecentItem(db,ri);
-                aa_recent.add(ri);
+                aa_recent.insert(ri,0);
                 // goto process activity
                 startActivity(confirm_screen);
             }else if( requestCode == REQUEST_PICK_IMAGE ){
@@ -182,7 +166,7 @@ public class RecentScreened extends AppCompatActivity {
                 File f = new File(furi);
                 RecentItem ri = new RecentItem(f.getName() ,"",bp,furi);
                 dbhelper.insertRecentItem(db,ri);
-                aa_recent.add(ri);
+                aa_recent.insert(ri,0);
                 // goto process activity
                 startActivity(confirm_screen);
             }
@@ -252,6 +236,46 @@ public class RecentScreened extends AppCompatActivity {
         return image;
     }
 
+    //loading all recent image in the background
+    private class LoadAllRecentInBackground extends AsyncTask<SQLiteDatabase, Void, ArrayList<RecentItem>> {
+
+        @Override
+        protected ArrayList<RecentItem> doInBackground(SQLiteDatabase[] params) {
+            return loadRecentImages(params[0]);
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<RecentItem> message) {
+            al_recent = message;
+            aa_recent = new RecentItemAdaptor(getApplicationContext(),al_recent);
+            lvrecent.setAdapter(aa_recent);
+        }
+        @Override
+        protected void onPreExecute() {
+            Toast.makeText(getApplicationContext(),"loading recent images...",Toast.LENGTH_LONG).show();
+        }
+    }
+
+    // load recent data from database and generate thumbnails
+    private  ArrayList<RecentItem> loadRecentImages(SQLiteDatabase db){
+        ArrayList<RecentItem> al_recent = new ArrayList<>();
+        al_recent = dbhelper.getAllRecentItem(db);
+        if(al_recent.size() == 0){
+            al_recent.add(new RecentItem("No Recent Image Found","null",
+                    Bitmap.createBitmap(128,128,Bitmap.Config.ARGB_8888),"null"));
+        }else{
+            // load all thumbnail of these images
+            for(int i=0;i<al_recent.size();i++){
+                if(al_recent.get(i).fpath.indexOf("content:") >= 0) {
+                    al_recent.get(i).thumbnail = scaleBitmap(getPicture(Uri.parse(al_recent.get(i).fpath)),0.1f);
+                }else{
+                    al_recent.get(i).thumbnail = scaleBitmap(getPicture(al_recent.get(i).fpath),0.1f);
+                }
+            }
+        }
+        Collections.reverse(al_recent);
+        return al_recent;
+    }
 
     // check and request permission for the first run
     private void checkAndRequestPermission(){
@@ -279,6 +303,46 @@ public class RecentScreened extends AppCompatActivity {
                 return;
             }
         }
+    }
+
+    private void setListenerOnListView(ListView lv){
+
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                RecentItem ri = (RecentItem)adapterView.getItemAtPosition(i);
+                Snackbar.make(view,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
+            }
+        });
+
+        lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(final AdapterView<?> adapterView, View view, int i, long l) {
+                final RecentItem ri = (RecentItem)adapterView.getItemAtPosition(i);
+                final PopupMenu pm = new PopupMenu(getApplicationContext(),view);
+                pm.getMenuInflater().inflate(R.menu.recent_item_menu, pm.getMenu());
+                final View v = view;
+                pm.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem menuItem) {
+                        switch(menuItem.getItemId()){
+                            case R.id.menu_recentitem_delete:
+                                Snackbar.make(v,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
+                                dbhelper.deleteRecentItem(db,ri.filename);
+                                aa_recent.remove(ri);
+                                break;
+                            case R.id.menu_recentitem_viewdata:
+                                Snackbar.make(v,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
+                                break;
+                        }
+                        return false;
+                    }
+                });
+                pm.show();
+                return false;
+            }
+        });
+
     }
 
     /**

@@ -1,5 +1,5 @@
 ## Character segmentation
 
-Including Python and C++ implmentations
+Including Python,Android and C++ implmentations on character segmentation.
 
 more TBA.

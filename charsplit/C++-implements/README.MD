@@ -16,7 +16,8 @@ TBW
 
 below shows complmentation status.
 
-* **PASS**：Character segmentation      
+* **PASS**：Character segmentation    
+* **____**: Words segmentation  
 * **PASS**：Building character template 
 * **PASS**：Lading template and transfer input to alowed format
 * **PASS**：Recognize

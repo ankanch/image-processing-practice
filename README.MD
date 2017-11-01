@@ -9,4 +9,4 @@ this repo includs all my entries on image processing. Mainly use Python, however
 ...more TBA
 
 
-email: 'kanch@ieee.org' OR 'kanch is me AT gamil dot com'
+`kanch@ieee.org`

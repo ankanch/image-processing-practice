@@ -24,10 +24,8 @@ import java.util.ArrayList;
 public class ThumbnailActivity extends AppCompatActivity {
 
     private ImageView iv_thumbnail;
-    private TextView tv_test;
     private String result;
     private  ArrayList<Bitmap> p;
-    private int pos = 0;
     private Context context;
 
     public static Bitmap target_image;      // target image to process
@@ -40,45 +38,15 @@ public class ThumbnailActivity extends AppCompatActivity {
         context = this;
 
         iv_thumbnail = (ImageView) findViewById(R.id.imageView_thumbnail);
-        tv_test = (TextView)findViewById(R.id.textView_test);
+        setTitle("Preview");
 
         // get image data
         iv_thumbnail.setImageBitmap(target_image);
-        ((Button)findViewById(R.id.button_previous)).setEnabled(false);
-        ((Button)findViewById(R.id.button_next)).setEnabled(false);
 
         ((Button)findViewById(R.id.button_process)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 new getImage().execute(target_image);
-                ((Button)findViewById(R.id.button_process)).setEnabled(false);
-                ((Button)findViewById(R.id.button_previous)).setEnabled(true);
-                ((Button)findViewById(R.id.button_next)).setEnabled(true);
-
-            }
-        });
-
-        ((Button)findViewById(R.id.button_next)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(pos < p.size()) {
-                    iv_thumbnail.setImageBitmap(p.get(pos));
-                    pos++;
-                }else{
-                    Toast.makeText(getApplicationContext(),"It's been the last picture",Toast.LENGTH_LONG).show();
-                }
-            }
-        });
-
-        ((Button)findViewById(R.id.button_previous)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(pos > 0 ) {
-                    iv_thumbnail.setImageBitmap(p.get(pos));
-                    pos--;
-                }else{
-                    Toast.makeText(getApplicationContext(),"It's been the first picture",Toast.LENGTH_LONG).show();
-                }
             }
         });
 
@@ -110,7 +78,10 @@ public class ThumbnailActivity extends AppCompatActivity {
             Log.v("result=",s);
             loading.dismiss();
             result = s;
-            tv_test.setText("Recognize Result:" + result);
+            // open text out activity
+            TextOutActivity.textout = result;
+            Intent textout_screen = new Intent(getApplicationContext(), TextOutActivity.class);
+            startActivity(textout_screen);
         }
 
         @Override
@@ -140,10 +111,12 @@ public class ThumbnailActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String s) {
             p = ImageHelper.getImageFromCPP(s);
-            iv_thumbnail.setImageBitmap(p.get(0));
-            pos = 1;
-            tv_test.setText("Image segmentation sum:" + Integer.toString(p.size()));
             loading.dismiss();
+
+            // load activity which used to preview the splited image
+            PreviewSplitActivity.imagelist = p;
+            Intent preview_screen = new Intent(getApplicationContext(), PreviewSplitActivity.class);
+            startActivity(preview_screen);
         }
 
         @Override

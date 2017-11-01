@@ -8,8 +8,8 @@
 
     <ImageView
         android:id="@+id/imageView_thumbnail"
-        android:layout_width="253dp"
-        android:layout_height="235dp"
+        android:layout_width="257dp"
+        android:layout_height="249dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginTop="16dp"
@@ -22,64 +22,43 @@
 
     <Button
         android:id="@+id/button_process"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Process"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="25dp"
-        android:layout_marginLeft="4dp"
-        android:color="#FFFFFF"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="118dp"
+        android:layout_height="60dp"
+        android:layout_marginLeft="64dp"
+        android:layout_marginTop="23dp"
         android:width="1dp"
-        app:layout_constraintLeft_toLeftOf="parent" />
+        android:color="#FFFFFF"
+        android:text="Preview Segments"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_test" />
 
     <TextView
         android:id="@+id/textView_test"
-        android:layout_width="371dp"
-        android:layout_height="159dp"
-        android:layout_marginBottom="88dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:text="TextView"
+        android:layout_width="332dp"
+        android:layout_height="118dp"
+        android:layout_marginLeft="26dp"
+        android:layout_marginTop="19dp"
+        android:fontFamily="monospace"
+        android:gravity="fill_vertical"
+        android:text="Which options do you want to perform?"
         android:textAlignment="center"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.09"
+        android:textSize="18sp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="@+id/button_next" />
-
-    <Button
-        android:id="@+id/button_next"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Next"
-        android:layout_marginRight="8dp"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="16dp" />
-
-    <Button
-        android:id="@+id/button_previous"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="PREVIOUS"
-        app:layout_constraintRight_toLeftOf="@+id/button_next"
-        android:layout_marginRight="8dp"
-        app:layout_constraintLeft_toRightOf="@+id/button_process"
-        android:layout_marginLeft="8dp"
-        app:layout_constraintHorizontal_bias="0.962"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="16dp" />
+        app:layout_constraintTop_toBottomOf="@+id/imageView_thumbnail" />
 
     <Button
         android:id="@+id/button_gettext"
-        android:layout_width="63dp"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="118dp"
         android:layout_height="60dp"
-        android:text="Get Text"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="-16dp"
-        app:layout_constraintRight_toLeftOf="@+id/button_previous"
-        android:layout_marginRight="8dp"
-        app:layout_constraintLeft_toRightOf="@+id/button_process"
         android:layout_marginLeft="8dp"
-        app:layout_constraintHorizontal_bias="0.625" />
+        android:layout_marginRight="56dp"
+        android:layout_marginTop="23dp"
+        android:text="Get Text"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintLeft_toRightOf="@+id/button_process"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_test" />
 
 </android.support.constraint.ConstraintLayout>
