@@ -1,7 +1,3 @@
-#ifndef DIGITSFINDER_TEXTEXTRACTOR_H
-#define DIGITSFINDER_TEXTEXTRACTOR_H
-
-#endif //DIGITSFINDER_TEXTEXTRACTOR_H
 #define STB_IMAGE_IMPLEMENTATION
 #include"stb_image.h"
 #include<string>
@@ -15,16 +11,18 @@
 
 
 // for debug
-#define ALLOW_DEBUG_MSG             false
-#define ALLOW_DEBUG_FILE_STORAGE    false
+#ifndef ALLOW_DEBUG_MSG                 // set to show debug message (in console)
+    #define ALLOW_DEBUG_MSG             false
+#endif
 
-// control lower boundary
-#define LOWER_BOUNDARY  30
+#ifndef ALLOW_DEBUG_FILE_STORAGE        // set to save every image generated (including segmentation cache)
+    #define ALLOW_DEBUG_FILE_STORAGE    false
+#endif
 
 
 /*****************************************************************************\
 ***                                                                        ***\   
-***                          Text Extractor                                ***\
+***                    Text Extractor and Recognition                      ***\
 ***           This can help to to split alphaberts from an image.          ***\
 ***                    by Kanch at http://akakanch.com                     ***\
 ***                         kanchisme@gmail.com                            ***\
@@ -32,53 +30,53 @@
 ***                                                                        ***\
 ****************************************************************************\*/
 
+/* ==============================================Types Defination============================================ */
 #ifndef FEATURE_DEFENDED
-/* Basic types */
-typedef uint8_t BASE;
-typedef BASE*** MATRIX;
-typedef BASE** ROW;
-typedef BASE** COLUMN;
-typedef BASE* PIXEL;
-typedef BASE* ALPHABERTS;
-typedef BASE CHANNEL;
-typedef MATRIX  IMAGE;
-typedef std::vector<int> LIST;
+    /* Basic types */
+    typedef uint8_t BASE;
+    typedef BASE*** MATRIX;
+    typedef BASE** ROW;
+    typedef BASE** COLUMN;
+    typedef BASE* PIXEL;
+    typedef BASE* ALPHABERTS;
+    typedef BASE CHANNEL;
+    typedef MATRIX  IMAGE;
+    typedef std::vector<int> LIST;
 
-typedef ROW IMAGE2D;
-typedef PIXEL ROW2D;
+    typedef ROW IMAGE2D;
+    typedef PIXEL ROW2D;
 
-/* struct stores image basic information */
-struct ImageData{
-    int width;
-    int height;
-    int channel;
-};
+    /* struct stores image basic information */
+    struct ImageData{
+        int width;
+        int height;
+        int channel;
+    };
 
-/* struct stores image matrix and its basic information */
-struct ImagePack{
-    IMAGE image;
-    ImageData properties;
-};
-struct ImagePack2D{
-    IMAGE2D image;
-    ImageData properties;
-};
+    /* struct stores image matrix and its basic information */
+    struct ImagePack{
+        IMAGE image;
+        ImageData properties;
+    };
+    struct ImagePack2D{
+        IMAGE2D image;
+        ImageData properties;
+    };
 
-//#define FEATURE_DEFENDED
-/* structures to stores Features */
-struct Features{
-    std::vector<int> x_sum;
-    std::vector<int> y_sum;
-    std::vector<int> line_sum;
-    int width;
-    int height;
-    double wh_ratio;
-    std::string label;
-};
+    /* structures to stores Features */
+    struct Features{
+        std::vector<int> x_sum;
+        std::vector<int> y_sum;
+        std::vector<int> line_sum;
+        int width;
+        int height;
+        double wh_ratio;
+        std::string label;
+    };
 
-typedef std::vector<ImagePack> LISTIMAGEPACK;
-typedef std::vector<ImagePack2D> LISTIMAGEPACK2D;
-typedef std::vector<LISTIMAGEPACK> DLISTIMAGEPACK;
+    typedef std::vector<ImagePack> LISTIMAGEPACK;
+    typedef std::vector<ImagePack2D> LISTIMAGEPACK2D;
+    typedef std::vector<LISTIMAGEPACK> DLISTIMAGEPACK;
 #endif
 
 void save_string(const std::string data,const std::string path);
@@ -915,6 +913,149 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     return alphaberts;
 }
 
+/* this function will extract all words out of the picture */
+/* words extracted can be used in extractText for future recognize */
+DLISTIMAGEPACK extractWord(uint8_t* img,const ImageData & id){
+    const IMAGE image = to_Martix(img,id);
+    save_string( numpylize(image,id) ,"cache/raw_image.txt");
+    ImagePack grayscaleimgpack = to_grayScale(image,id);
+    /* 1 for background, 0 for data */
+    grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,180);  
+    grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,180); 
+    klog("start scanning on y...");
+    int *ones_on_y = new int[grayscaleimgpack.properties.height];
+    for(int i=0;i<grayscaleimgpack.properties.height;i++){
+        int buf = 0;
+        for(int j=0;j<grayscaleimgpack.properties.width;j++){
+            if(grayscaleimgpack.image[i][j][0] > 0){
+               ++buf;
+            }
+        }
+        ones_on_y[i] = buf;
+    }
+    klog("split line...");
+    LIST sentence_boundary;
+    int start,end;
+    for(int i=0;i<grayscaleimgpack.properties.height-1;i++){
+        //klog("ones_on_y="+to_string(ones_on_y[i])+"\t@"+to_string(i));
+        if( ( ones_on_y[i] == 0) && (ones_on_y[i+1] > 0) ){ //top boundary of sentence
+            start = i;
+        }else if((ones_on_y[i] > 0) && (ones_on_y[i+1] == 0)){   // bottom boundary of sentence
+            end = i+1;
+            sentence_boundary.push_back(start);
+            sentence_boundary.push_back(end);
+        }
+    }
+    int linecount = sentence_boundary.size()/2;
+    klog("linecout="+to_string(linecount) + "\tsb.size()="+to_string(sentence_boundary.size()));
+    LISTIMAGEPACK sentences;
+    for(int i=0;i<linecount;i++){
+        ImagePack im;
+        im.image = sliceSubMatrix3D(grayscaleimgpack.image,grayscaleimgpack.properties,
+                                    sentence_boundary[2*i],sentence_boundary[2*i+1],-1,-1);
+        im.properties.width = grayscaleimgpack.properties.width;
+        im.properties.height = sentence_boundary[2*i+1] - sentence_boundary[2*i];
+        im.properties.channel = 1;
+        sentences.push_back(im);
+        ImagePack2D d2line = depixelize(im.image,im.properties);
+        save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/line" + to_string(i+1) + ".txt");
+    }
+    klog("Sentences list size=" + to_string(sentences.size()) + "\tstart scanning on x...");
+    DLISTIMAGEPACK words;
+    for(int i =0;i<sentences.size();i++){
+        LISTIMAGEPACK alpha;
+        klog("scan on sentence... on line " + to_string(i+1));
+        ImagePack sen = sentences[i];
+        LIST zeros_on_sentence;
+        for(int j=0;j<sen.properties.width;j++ ){
+            int buf=0;
+            for(int c=0;c<sen.properties.height;c++){
+                if(sen.image[c][j][0] > 0){
+                    ++buf;
+                }
+            }
+            zeros_on_sentence.push_back(buf);
+        }
+        // get avereage space length
+        //get left and right boundary first
+        int left_line_boundary = 0;
+        for(int j=0;j<zeros_on_sentence.size();--j){
+            if(zeros_on_sentence[j] != 0){
+                break;  
+            }
+            ++left_line_boundary;
+        }
+        int right_line_boundary = 0;
+        for(int j=zeros_on_sentence.size()-1;j >= 0;--j){
+            if(zeros_on_sentence[j] != 0){
+                break;  
+            }
+            ++right_line_boundary;
+        }
+        int average = 0;
+        int count_space = 0;
+        int lenxxx = 0;
+        bool loopzero = false;
+        for(int j=left_line_boundary;j<zeros_on_sentence.size()-right_line_boundary;j++){
+            if(zeros_on_sentence[j] == 0){
+                if(!loopzero){
+                    start = j;
+                    lenxxx = 1;
+                    loopzero = true;
+                    ++count_space;
+                }else{
+                    ++lenxxx;
+                }
+            }else{
+                if(loopzero){
+                    loopzero = false;
+                    average += lenxxx;
+                }
+            }
+        }
+        average = (average/count_space) + 2;        // change this number if it works badly
+        std::cout<<"average space length="<<average<<std::endl;
+        // start extract words
+        klog("split line words....");
+        start = end = 0;
+        bool no_split = true;
+        klog("\tsb.size()="+to_string(zeros_on_sentence.size()));
+        for(int j=0;j<zeros_on_sentence.size();j++){
+            if( ( zeros_on_sentence[j] == 0) && (zeros_on_sentence[j+1] > 0) ){ //left boundary of words
+                if(no_split){
+                    start = j;
+                }
+            }else if((zeros_on_sentence[j] > 0) && (zeros_on_sentence[j+1] == 0)){   // right boundary of alplaberts
+                end = j+1;
+                no_split = true;
+                int ending_checking_pos = ((j+average)>(zeros_on_sentence.size()))?(zeros_on_sentence.size()):(j+average);
+                for(int k=j+1;k<ending_checking_pos;k++){
+                    if(zeros_on_sentence[k] > 0){
+                        no_split = false;
+                        break;
+                    }
+                }
+                if(no_split){
+                    IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
+                    ImagePack imp = {imx,{end-start,sen.properties.height,1}};
+                    imp.image = reverseImageBit(imp.image,imp.properties);
+                    alpha.push_back(imp);
+                    no_split = true;
+                }
+            }
+        }
+        words.push_back(alpha);
+    }
+
+    //delete resource
+    klog("deleting resource...");
+    delete[] ones_on_y;
+    deleteMatrix(image,id);
+    deleteMatrix(grayscaleimgpack.image,grayscaleimgpack.properties);
+    return words;
+}
+
+/* ==============================================Recognize text fucntion here================================== */
 /* recognize a single image */
 std::string recognize(const DLISTIMAGEPACK& data){
     //start recognize
@@ -940,3 +1081,4 @@ std::string recognize(const DLISTIMAGEPACK& data){
     }
     return result;
 }
+
