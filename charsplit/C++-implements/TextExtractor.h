@@ -813,9 +813,8 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
 /* ==============================================Extract text fucntion here================================== */
 
 DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
-//std::string extractText(uint8_t* img,const ImageData & id){
     klog("converting to matrix...");
-    const IMAGE image = to_Martix(img,id);
+    const IMAGE image  = to_Martix(img,id);
     klog("saving matrix...");
     save_string( numpylize(image,id) ,"cache/raw_image.txt");
     klog("to grayscale image...");
@@ -1055,15 +1054,20 @@ DLISTIMAGEPACK extractWord(uint8_t* img,const ImageData & id){
     return words;
 }
 
+DLISTIMAGEPACK extractTextFromWord(const IMAGE word,const ImageData & id){
+    DLISTIMAGEPACK alphberts;
+
+    return alphberts;
+}
+
 /* ==============================================Recognize text fucntion here================================== */
 /* recognize a single image */
 std::string recognize(const DLISTIMAGEPACK& data){
     //start recognize
     std::string result = "";
-    std::cout<<"loading..."<<std::endl;
+    klog("loading...");
     const std::vector<Features> templatedata =  parseTemplateData(pcadata);
-    std::cout<<"after return, pcalist length="<<templatedata.size()<<std::endl;
-    std::cout<<"predicting..."<<std::endl;
+    klog("predicting...");
     for(int i=0;i<data.size();i++){
         LISTIMAGEPACK alpha = data[i];
         for(int j=0;j<alpha.size();j++){
@@ -1082,3 +1086,21 @@ std::string recognize(const DLISTIMAGEPACK& data){
     return result;
 }
 
+/* recognize a data with the original format, like words and space */
+/* input must be words list */
+std::string recognizeWithFormat(const DLISTIMAGEPACK& data){
+    std::string result = "";
+    for(int i=0;i<data.size();i++){
+        LISTIMAGEPACK line = data[i];
+        for(int j=0;j<line.size();j++){
+            klog("extracting alphberts from word.");
+            DLISTIMAGEPACK word = extractTextFromWord(line[j].image,line[j].properties);
+            klog("recognizing...");
+            std::string wordx =  recognize(word);
+            klog("cache-result:" + wordx);
+            result += wordx + " ";
+        }
+        result += "\r\n";
+    }
+    return result;
+}

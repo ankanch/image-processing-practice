@@ -1,10 +1,11 @@
 #include<iostream>
 #include<string>
-#define ALLOW_DEBUG_FILE_STORAGE             true
+//#define ALLOW_DEBUG_FILE_STORAGE           true
+//#define ALLOW_DEBUG_MSG                    true
 #include"TextExtractor.h"
 
 #define TEST_WORD_SPLIT true
-#define TEST_ALPHABERTS_SPLIT false
+#define TEST_ALPHABERTS_SPLIT true
 #define TEST_AW_CONBINATION true
 
 using namespace std;
@@ -20,18 +21,19 @@ int main(int argc,char**argv){
     cout<<">>Reading image"<<endl;
     int width, height, bpp;
     
+    DLISTIMAGEPACK p_words;
     if(TEST_WORD_SPLIT){
         cout<<("Test for words segmentation...")<<endl;
         uint8_t* rgb_image_word_test = stbi_load("data/2.jpg", &width, &height, &bpp, 3);
         ImageData b = {width,height,bpp};
-        DLISTIMAGEPACK p_words = extractWord(rgb_image_word_test,b);
+        p_words = extractWord(rgb_image_word_test,b);
         klog("saving result..");
         for(int i=0;i<p_words.size();i++){
             LISTIMAGEPACK line = p_words[i];
             for(int j=0;j<line.size();j++){
                 ImagePack imp = line[j];
                 ImagePack2D d2line = depixelize(imp.image,imp.properties);
-                save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp_words_"+ to_string(i+1) + to_string(j+1) + ".txt");
+                //save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp_words_"+ to_string(i+1) + to_string(j+1) + ".txt");
             }
         }
         stbi_image_free(rgb_image_word_test);
@@ -54,7 +56,7 @@ int main(int argc,char**argv){
     }
 
     if(TEST_AW_CONBINATION){
-
+        cout<<"\n\nTEST_AW_CONBINATION result="<<recognizeWithFormat(p_words)<<endl;
     }
 
     return 0;
