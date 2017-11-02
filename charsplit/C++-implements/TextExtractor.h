@@ -86,11 +86,16 @@ void save_string(const std::string data,const std::string path);
 /*Transfer anyvalue to string, for compatiable of Android app.
 source:https://stackoverflow.com/questions/22774009/android-ndk-stdto-string-support*/
 template <typename T>
-std::string to_string(T value)
-{
+std::string to_string(T value){
     std::ostringstream os ;
     os << value ;
     return os.str() ;
+}
+
+void pause(bool pause=true){
+    while(pause){
+        ;
+    }
 }
 
 /* used to display debug message, 
@@ -160,7 +165,7 @@ void save2File(const IMAGE image,const ImageData &id,const std::string des="imag
 /* can print pixelize and depixelize */
 void printMatrix(const MATRIX mat3d,const ImageData&id,const IMAGE2D mat2d=nullptr){
     if(ALLOW_DEBUG_MSG){
-        std::cout<<"[";
+        std::cout<<"[\n";
         if(id.channel > 0){
             MATRIX mat = mat3d;
             for(int i =0;i<id.height;i++){
@@ -727,7 +732,7 @@ const std::vector<double> minusWithScale(const std::vector<int> x,const std::vec
                 sumx += x[j];
             }
             sumx /= (upper-base);
-            klog("i=" + to_string(i) + "\t,x.size=" + to_string(x.size()) + "\t,x[i]=" + to_string(x[i]) + "\t,sumx=" + to_string(sumx));
+            //klog("i=" + to_string(i) + "\t,x.size=" + to_string(x.size()) + "\t,x[i]=" + to_string(x[i]) + "\t,sumx=" + to_string(sumx));
             result.push_back( sumx*payoff - templatex[i] );
         }
     }else{
@@ -739,10 +744,10 @@ const std::vector<double> minusWithScale(const std::vector<int> x,const std::vec
             int sumx = 0;
             for(int j=base;j<int(base+mapping_size);j++){
                 sumx += templatex[j];
-                klog("j=" + to_string(j) + "\t,x.size=" + to_string(x.size()) + "\t,x[j]=" + to_string(x[j]));
+                //klog("j=" + to_string(j) + "\t,x.size=" + to_string(x.size()) + "\t,x[j]=" + to_string(x[j]));
             }
             sumx /= (upper-base);
-            klog("i=" + to_string(i) + "\t,templatex.size=" + to_string(x.size()) + "\t,templatex=" + to_string(templatex[i]) + "\t,sumx=" + to_string(sumx));
+            //klog("i=" + to_string(i) + "\t,templatex.size=" + to_string(x.size()) + "\t,templatex=" + to_string(templatex[i]) + "\t,sumx=" + to_string(sumx));
             result.push_back( sumx*payoff - x[i] );
         }
     }
@@ -761,9 +766,9 @@ const double meanSquaredError(const std::vector<double> con,const double csum){
     for(int i=0;i<con.size();i++){
         double xx =  con[i]/csum;
         error += (xx*xx);
-        logx = logx + "con_i=" + to_string(con[i]) + "\t,csum=" + to_string(csum) + "\t,xx=" + to_string(xx) + "\n";
+        //logx = logx + "con_i=" + to_string(con[i]) + "\t,csum=" + to_string(csum) + "\t,xx=" + to_string(xx) + "\n";
+        //klog(logx);
     }
-    klog(logx);
     return error/con.size();
 }
 
@@ -772,7 +777,7 @@ const double payoff(const int a,const int b){
 }
 
 
-/* compute similarity based on width and height ratio*/
+/* compute similarity based on width and height ratio*/ 
 const double error_feature_WHR(const Features img,const Features temp){
     return std::abs( img.wh_ratio - temp.wh_ratio );
 }
@@ -810,6 +815,11 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     return current;
 }
 
+void exportImage(ImagePack & imp2d,std::string filename){
+    ImagePack2D d2line = depixelize(imp2d.image,imp2d.properties);
+    save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/" + filename);
+}
+
 /* ==============================================Extract text fucntion here================================== */
 
 DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
@@ -821,14 +831,14 @@ DLISTIMAGEPACK extractText(uint8_t* img,const ImageData & id){
     ImagePack grayscaleimgpack = to_grayScale(image,id);
     //Thresholding(image,id);
     ImagePack2D a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
-    save_string(numpylize(nullptr,a.properties,a.image),"cache/numpylizestr.txt");
+    save_string(numpylize(nullptr,a.properties,a.image),"cache/grayscale.txt");
     klog("thresholding... and set to 1...");
     /* 1 for background, 0 for data */
     grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,180);   //50
     grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,180); //185
     klog("save thresholding-ed picture...");
     a = depixelize(grayscaleimgpack.image ,grayscaleimgpack.properties);
-    save_string(numpylize(nullptr,a.properties,a.image),"cache/normalized.txt");
+    save_string(numpylize(nullptr,a.properties,a.image),"cache/thresholding.txt");
     klog("start scanning on y...");
     int *ones_on_y = new int[grayscaleimgpack.properties.height];
     for(int i=0;i<grayscaleimgpack.properties.height;i++){
@@ -1037,7 +1047,7 @@ DLISTIMAGEPACK extractWord(uint8_t* img,const ImageData & id){
                 if(no_split){
                     IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
                     ImagePack imp = {imx,{end-start,sen.properties.height,1}};
-                    imp.image = reverseImageBit(imp.image,imp.properties);
+                    //imp.image = reverseImageBit(imp.image,imp.properties);
                     alpha.push_back(imp);
                     no_split = true;
                 }
@@ -1055,9 +1065,39 @@ DLISTIMAGEPACK extractWord(uint8_t* img,const ImageData & id){
 }
 
 DLISTIMAGEPACK extractTextFromWord(const IMAGE word,const ImageData & id){
-    DLISTIMAGEPACK alphberts;
-
-    return alphberts;
+    DLISTIMAGEPACK alphaberts;
+    LISTIMAGEPACK alpha;
+    klog("start extracting alphberts from word...");
+    ImagePack sen = ImagePack{word,id};
+    exportImage(sen,"extractTextFromWord_raw.txt" );
+    LIST zeros_on_sentence;
+    for(int j=0;j<sen.properties.width;j++ ){
+        int buf=0;
+        for(int c=0;c<sen.properties.height;c++){
+            if(sen.image[c][j][0] > 0){
+                ++buf;
+            }
+        }
+        zeros_on_sentence.push_back(buf);
+    }
+    klog("split line alphaberts....");
+    int start=0, end = 0;
+    klog("\tsb.size()="+to_string(zeros_on_sentence.size()));
+    for(int j=0;j<zeros_on_sentence.size();j++){
+        if( ( zeros_on_sentence[j] == 0) && (zeros_on_sentence[j+1] > 0) ){ //left boundary of alphaberts
+            start = j;
+        }else if((zeros_on_sentence[j] > 0) && (zeros_on_sentence[j+1] == 0)){   // right boundary of alplaberts
+            end = j+1;
+            IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
+            ImagePack imp = {imx,{end-start,sen.properties.height,1}};
+            imp.image = reverseImageBit(imp.image,imp.properties);
+            printMatrix(imp.image,imp.properties);
+            pause(false);
+            alpha.push_back(imp);
+        }
+    }
+    alphaberts.push_back(alpha);
+    return alphaberts;
 }
 
 /* ==============================================Recognize text fucntion here================================== */
@@ -1074,7 +1114,6 @@ std::string recognize(const DLISTIMAGEPACK& data){
             //delete empty line
             alpha[j].image = delteEmptyline(alpha[j].image,alpha[j].properties);
             ImagePack2D d2line = depixelize(alpha[j].image,alpha[j].properties);
-            //klog("saving");
             save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp___000000_"
                                                                                 +to_string(i) + to_string(j)+".txt");
             std::string re = predictAlphberts(alpha[j],templatedata);
@@ -1097,8 +1136,9 @@ std::string recognizeWithFormat(const DLISTIMAGEPACK& data){
             DLISTIMAGEPACK word = extractTextFromWord(line[j].image,line[j].properties);
             klog("recognizing...");
             std::string wordx =  recognize(word);
-            klog("cache-result:" + wordx);
+            klog("cache-result: |" + wordx + "| ");
             result += wordx + " ";
+            std::cout<<"processing word on line "<<i+1<<",\t"<<j+1<<" th"<<std::endl;
         }
         result += "\r\n";
     }

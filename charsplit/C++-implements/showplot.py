@@ -7,7 +7,7 @@ argv_count = len(sys.argv)
 if argv_count <= 1:
 	print("no args ,exit")
 	exit()
-elif argv_count in (2,3):
+elif argv_count in (2,3,4):
 	print("reading numpylized data from ",sys.argv[1])
 	with open(sys.argv[1]) as ff:
 		data = ff.read().replace("\n","").replace("\t","")
@@ -16,6 +16,14 @@ elif argv_count in (2,3):
 		img = np.asarray(t)
 		print(img,img.shape)
 		if argv_count == 2:
+			if len(img.shape) >= 3:
+				tt = []
+				for x in img:
+					s = []
+					for y in x:
+						s.append(y[0])
+					tt.append(s)
+				img = np.asarray(tt)
 			print("showing grayscale image...")
 			plt.imshow(img,cmap='gray')
 		elif argv_count == 3:
