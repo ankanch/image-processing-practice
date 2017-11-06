@@ -647,11 +647,35 @@ Features feature_extractor_projectionmatch(IMAGE img,ImageData&id,std::string la
 
 
 /* image feature extractor: nine special points sampling   */
-Features feature_extractor_9Sampling(IMAGE img,ImageData&id){
-    Features feature;
+Features feature_extractor_9Sampling(IMAGE img,ImageData&id,Features& fea){
+    //we're going to select 9 special point to use as our third feature
+    // these 9 points are top-left, top-center, top-right, also with mid-height and bottom
+    // then, we're going to arrange them in the order of scaning
+    fea.ninesampling.push_back( img[ 0 ][ 0 ][0] );                                // top-left
+    fea.ninesampling.push_back( img[ 0 ][ int(id.width/2) ][0] );                  // top-center
+    fea.ninesampling.push_back( img[ 0 ][ id.width-1 ][0] );                       //top-right
+    fea.ninesampling.push_back( img[ int(id.height/2) ][ 0 ][0] );                  //mid-l
+    fea.ninesampling.push_back( img[ int(id.height/2) ][ int(id.width/2) ][0] );   //mid-c
+    fea.ninesampling.push_back( img[ int(id.height/2) ][ id.width-1 ][0] );        //mid-r
+    fea.ninesampling.push_back( img[ id.height-1 ][ 0 ][0] );                      //bottom-l
+    fea.ninesampling.push_back( img[ id.height-1 ][ int(id.width/2) ][0] );        //bottom-c
+    fea.ninesampling.push_back( img[ id.height-1 ][ id.width-1 ][0] );              //bottom-r
 
-    return feature;
+    return fea;
 }
+
+/* compute cosine */
+const double cosine(std::vector<int> v1,std::vector<int> v2){
+    int sum = 0;
+    int sumv1=0,sumv2=0;
+    for(int i=0;i<v1.size();i++){
+        sum += v1[i]*v2[i];
+        sumv1 += v1[i];
+        sumv2 += v2[i];
+    }
+    return sum*1.0/(sqrt(sumv1)*sqrt(sumv2));
+} 
+
 
 /* parse feature structure to string */
 /* feature format: x1,x2@y1,y2@scale@height,width@label#next_feature_section */
