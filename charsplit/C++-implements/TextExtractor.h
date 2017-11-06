@@ -67,7 +67,7 @@
     struct Features{
         std::vector<int> x_sum;
         std::vector<int> y_sum;
-        std::vector<int> line_sum;
+        std::vector<int> ninesampling;      // for nine sampling
         int width;
         int height;
         double wh_ratio;
@@ -646,8 +646,8 @@ Features feature_extractor_projectionmatch(IMAGE img,ImageData&id,std::string la
 }
 
 
-/* image feature extractor: 九宫格匹配  */
-Features feature_extractor_Jiugongge(IMAGE img,ImageData&id){
+/* image feature extractor: nine special points sampling   */
+Features feature_extractor_9Sampling(IMAGE img,ImageData&id){
     Features feature;
 
     return feature;

@@ -4,6 +4,8 @@
 This is the C++ implementation of character segmentation.
  I also implemented a simple character recognize in this module (using template matching).
 
+ ![How it works](https://github.com/ankanch/image-processing-practice/blob/master/charsplit/C++-implements/data/expian/explain.jpg?raw=true)
+
 ## Third Parth Module
 
 * stb_image.h
