@@ -1,3 +1,5 @@
+#define ALLOW_DEBUG_FILE_STORAGE           true
+#define ALLOW_DEBUG_MSG                    true
 #include"TextExtractor.h"
 #include<iostream>
 #include<dirent.h>
@@ -47,9 +49,13 @@ int main(int argc,char**argv){
                             //klog("saving");
                             save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/template_scale2fit_"+ to_string(++i) + ".txt");                    
 
+
                             // scale image to the same size
                             cout<<"\t|get projection and width-height ration features ...\t";
+
+                            //extract feature
                             Features f =  feature_extractor_projectionmatch(imagex.image,imagex.properties,to_string(fname[0]));
+                            f = feature_extractor_9Sampling(imagex.image,imagex.properties,f);
                             cout<<"converting to string ...\n";
                             std::string strx = feature2string(f);
                             klog(strx);

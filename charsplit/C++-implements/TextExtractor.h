@@ -678,7 +678,7 @@ const double cosine(std::vector<int> v1,std::vector<int> v2){
 
 
 /* parse feature structure to string */
-/* feature format: x1,x2@y1,y2@scale@height,width@label#next_feature_section */
+/* feature format: x1,x2@y1,y2@scale@height,width@label@9points#next_feature_section */
 std::string feature2string(Features f){
     std::string buf = "";
     for(int i=0;i<f.x_sum.size();i++){
@@ -692,7 +692,11 @@ std::string feature2string(Features f){
     buf += to_string(f.wh_ratio) + "@";
     buf += to_string(f.height) + ",";
     buf += to_string(f.width) + "@";
-    buf += f.label;
+    buf += f.label + "@";
+    for(int i=0;i<f.ninesampling.size();i++){
+        buf += to_string(f.ninesampling[i]) + ",";
+    }
+    buf = buf.substr(0,buf.length()-1);
 
     return buf;
 }
@@ -724,6 +728,13 @@ Features string2feature(std::string s){
     f.height = atoi(hw[0].c_str());
     f.width = atoi(hw[1].c_str());
     f.label = dataframe[4];
+    // set 9 special feature
+    values = split_string(dataframe[5],",");
+    std::vector<int> nsps;
+    for(int i=0;i<values.size();i++){
+        nsps.push_back(atoi(values[i].c_str()));
+    }
+    f.ninesampling = nsps;
 
     return f;
 }
@@ -814,13 +825,15 @@ const double similarity(const Features img,const Features temp){
     double y_error = meanSquaredError( y_diff , temp.width<=img.width?img.width:temp.width );
     klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
     const double efwhr = error_feature_WHR(img,temp);
-    return 1.0 - ( 0.75*(x_error + y_error) + 0.25*efwhr ) ;
+    const double simNSPS = cosine(temp.ninesampling,img.ninesampling);
+    return 1.0 - ( 0.74*(x_error + y_error) + 0.01*simNSPS + 0.25*efwhr ) ;
 }
 
 /* predict which alphaberts it is  */
 std::string predictAlphberts(ImagePack img,const std::vector<Features> &templatedata){
     // get feature
     Features f = feature_extractor_projectionmatch(img.image,img.properties,"");
+    f = feature_extractor_9Sampling(img.image,img.properties,f);
 
     double maxv = 0;            // stores max similarity
     std::string current="*";    // stores char which matches to the max similarity

@@ -1,7 +1,7 @@
 #include<iostream>
 #include<string>
-#define ALLOW_DEBUG_FILE_STORAGE           true
-#define ALLOW_DEBUG_MSG                    true
+#define ALLOW_DEBUG_FILE_STORAGE           false
+#define ALLOW_DEBUG_MSG                    false
 #include"TextExtractor.h"
 
 #define TEST_WORD_SPLIT true
@@ -24,7 +24,7 @@ int main(int argc,char**argv){
     DLISTIMAGEPACK p_words;
     if(TEST_WORD_SPLIT){                                    //PASS
         cout<<("Test for words segmentation...")<<endl;
-        uint8_t* rgb_image_word_test = stbi_load("data/2.jpg", &width, &height, &bpp, 3);
+        uint8_t* rgb_image_word_test = stbi_load("data/test2.jpg", &width, &height, &bpp, 3);
         ImageData b = {width,height,bpp};
         p_words = extractWord(rgb_image_word_test,b);
         klog("saving result..");
@@ -49,7 +49,7 @@ int main(int argc,char**argv){
     
     if(TEST_ALPHABERTS_SPLIT){                             //PASS
         cout<<("Test for alphaberts segmentation...")<<endl;
-        uint8_t* rgb_image = stbi_load("data/template.jpg", &width, &height, &bpp, 3);
+        uint8_t* rgb_image = stbi_load("data/test2.jpg", &width, &height, &bpp, 3);
         ImageData a = {width,height,bpp};
         // extract single alphaberts image
         DLISTIMAGEPACK p = extractText(rgb_image,a);

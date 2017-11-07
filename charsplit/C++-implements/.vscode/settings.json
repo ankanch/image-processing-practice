@@ -69,6 +69,11 @@
         "xtree": "cpp",
         "svd": "cpp",
         "dense": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "cctype": "cpp",
+        "clocale": "cpp",
+        "cwctype": "cpp",
+        "*.tcc": "cpp",
+        "string_view": "cpp"
     }
 }

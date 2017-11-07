@@ -50,7 +50,9 @@
                 "c:/MinGW/include/c++/7.2.0",
                 "c:/MinGW/include/c++/7.2.0/x86_64-w64-mingw32",
                 "c:/MinGW/include/c++/7.2.0",
-                "c:/MinGW/include/c++/7.2.0"
+                "c:/MinGW/include/c++/7.2.0",
+                "c:/MinGW/include/c++/7.2.0",
+                "c:/MinGW/include/c++/7.2.0/tr1"
             ],
             "defines": [
                 "_DEBUG",
