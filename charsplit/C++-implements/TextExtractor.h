@@ -19,6 +19,7 @@
     #define ALLOW_DEBUG_FILE_STORAGE    false
 #endif
 
+static int debug_alp_count = 0;
 
 /*****************************************************************************\
 ***                                                                        ***\   
@@ -826,7 +827,8 @@ const double similarity(const Features img,const Features temp){
     klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
     const double efwhr = error_feature_WHR(img,temp);
     const double simNSPS = cosine(temp.ninesampling,img.ninesampling);
-    return 1.0 - ( 0.74*(x_error + y_error) + 0.01*simNSPS + 0.25*efwhr ) ;
+    return 1.0 - ( 0.6*(x_error + y_error) + 0.2*(1-simNSPS) + 0.2*efwhr ) ;
+    //return 1.0 - ( 0.8*(x_error + y_error) + 0.2*efwhr ) ;
 }
 
 /* predict which alphaberts it is  */
@@ -1130,6 +1132,7 @@ DLISTIMAGEPACK extractTextFromWord(const IMAGE word,const ImageData & id){
             imp.image = reverseImageBit(imp.image,imp.properties);
             printMatrix(imp.image,imp.properties);
             pause(false);
+            exportImage(imp,"alp_alp_from_wordsExtracted_"+ to_string(debug_alp_count++) + ".txt");
             alpha.push_back(imp);
         }
     }
@@ -1151,8 +1154,6 @@ std::string recognize(const DLISTIMAGEPACK& data){
             //delete empty line
             alpha[j].image = delteEmptyline(alpha[j].image,alpha[j].properties);
             ImagePack2D d2line = depixelize(alpha[j].image,alpha[j].properties);
-            save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/alp___000000_"
-                                                                                +to_string(i) + to_string(j)+".txt");
             std::string re = predictAlphberts(alpha[j],templatedata);
             result += re;
             printMatrix(alpha[j].image,alpha[j].properties);

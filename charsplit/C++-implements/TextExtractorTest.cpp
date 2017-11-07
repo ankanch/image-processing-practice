@@ -1,6 +1,6 @@
 #include<iostream>
 #include<string>
-#define ALLOW_DEBUG_FILE_STORAGE           false
+#define ALLOW_DEBUG_FILE_STORAGE           true
 #define ALLOW_DEBUG_MSG                    false
 #include"TextExtractor.h"
 
@@ -34,7 +34,7 @@ int main(int argc,char**argv){
             for(int j=0;j<line.size();j++){
                 ImagePack imp = line[j];
                 ++word_count;
-                //exportImage(imp,"alp_wordsExtracted_"+ to_string(i+1) + to_string(j+1) + ".txt");
+                exportImage(imp,"alp_wordsExtracted_"+ to_string(i+1) + to_string(j+1) + ".txt");
             }
         }
         cout<<"word segmentation couts:"<<word_count<<endl;
