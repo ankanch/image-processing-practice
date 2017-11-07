@@ -1122,14 +1122,17 @@ DLISTIMAGEPACK extractTextFromWord(const IMAGE word,const ImageData & id){
     klog("split line alphaberts....");
     int start=0, end = 0;
     klog("\tsb.size()="+to_string(zeros_on_sentence.size()));
+    bool beg_found = false;
     for(int j=0;j<zeros_on_sentence.size();j++){
-        if( ( zeros_on_sentence[j] == 0) && (zeros_on_sentence[j+1] > 0) ){ //left boundary of alphaberts
+        if( ( zeros_on_sentence[j] > 0 ) && (!beg_found)  ){ //left boundary of alphaberts
             start = j;
-        }else if((zeros_on_sentence[j] > 0) && (zeros_on_sentence[j+1] == 0)){   // right boundary of alplaberts
-            end = j+1;
+            beg_found = true;
+        }else if(((zeros_on_sentence[j] == 0) || (j==zeros_on_sentence.size()-1)) && beg_found){   // right boundary of alplaberts
+            end = j;
             IMAGE imx = sliceSubMatrix3D(sen.image,sen.properties,-1,-1,start,end);
             ImagePack imp = {imx,{end-start,sen.properties.height,1}};
             imp.image = reverseImageBit(imp.image,imp.properties);
+            beg_found = false;
             printMatrix(imp.image,imp.properties);
             pause(false);
             exportImage(imp,"alp_alp_from_wordsExtracted_"+ to_string(debug_alp_count++) + ".txt");
