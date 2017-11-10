@@ -13,7 +13,7 @@
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginTop="16dp"
-        android:background="?attr/colorButtonNormal"
+        android:background="@android:color/darker_gray"
         app:layout_constraintHorizontal_bias="0.504"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -25,11 +25,11 @@
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="118dp"
         android:layout_height="60dp"
-        android:layout_marginLeft="64dp"
+        android:layout_marginLeft="6dp"
         android:layout_marginTop="23dp"
         android:width="1dp"
         android:color="#FFFFFF"
-        android:text="Preview Segments"
+        android:text="Alphberts Segments"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView_test" />
 
@@ -52,13 +52,23 @@
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="118dp"
         android:layout_height="60dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="56dp"
+        android:layout_marginRight="6dp"
         android:layout_marginTop="23dp"
         android:text="Get Text"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintLeft_toRightOf="@+id/button_process"
         app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView_test"
+        app:layout_constraintLeft_toRightOf="@+id/button_previewwords"
+        android:layout_marginLeft="8dp" />
+
+    <Button
+        android:id="@+id/button_previewwords"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="118dp"
+        android:layout_height="60dp"
+        android:layout_marginLeft="22dp"
+        android:layout_marginTop="23dp"
+        android:text="Words Segments"
+        app:layout_constraintLeft_toRightOf="@+id/button_process"
         app:layout_constraintTop_toBottomOf="@+id/textView_test" />
 
 </android.support.constraint.ConstraintLayout>

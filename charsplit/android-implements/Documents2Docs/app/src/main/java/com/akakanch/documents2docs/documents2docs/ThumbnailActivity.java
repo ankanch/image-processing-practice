@@ -50,6 +50,13 @@ public class ThumbnailActivity extends AppCompatActivity {
             }
         });
 
+        ((Button)findViewById(R.id.button_previewwords)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new getImageWords().execute(target_image);
+            }
+        });
+
         ((Button)findViewById(R.id.button_gettext)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -93,7 +100,7 @@ public class ThumbnailActivity extends AppCompatActivity {
         }
     }
 
-    //获取切割后的图片
+    //获取切割后的图片（字母）
     private class getImage extends AsyncTask<Bitmap, Void, String> {
 
         final private ProgressDialog loading= new ProgressDialog(context);
@@ -102,7 +109,7 @@ public class ThumbnailActivity extends AppCompatActivity {
         protected String doInBackground(Bitmap... bitmaps) {
             Bitmap image = bitmaps[0];
             int[] iimg = bmp2ChannelArray(image);
-            String result =   RecentScreened.processImageJNI(iimg,image.getWidth(),image.getHeight(),3,500);
+            String result =   RecentScreened.processImageJNI(iimg,image.getWidth(),image.getHeight(),3,1);
             Log.v("result(getImage)=",result);
             return result;
         }
@@ -128,6 +135,40 @@ public class ThumbnailActivity extends AppCompatActivity {
         }
     }
 
+    //获取切割后的图片(单词)
+    private class getImageWords extends AsyncTask<Bitmap, Void, String> {
+
+        final private ProgressDialog loading= new ProgressDialog(context);
+
+        @Override
+        protected String doInBackground(Bitmap... bitmaps) {
+            Bitmap image = bitmaps[0];
+            int[] iimg = bmp2ChannelArray(image);
+            String result =   RecentScreened.processImageJNI(iimg,image.getWidth(),image.getHeight(),3,3);
+            Log.v("result(getImage)=",result);
+            return result;
+        }
+
+
+        @Override
+        protected void onPostExecute(String s) {
+            p = ImageHelper.getImageFromCPP(s);
+            loading.dismiss();
+
+            // load activity which used to preview the splited image
+            PreviewSplitActivity.imagelist = p;
+            Intent preview_screen = new Intent(getApplicationContext(), PreviewSplitActivity.class);
+            startActivity(preview_screen);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            loading.setMessage("处理中...");
+            loading.show();
+            loading.setCancelable(false);
+            loading.setCanceledOnTouchOutside(false);
+        }
+    }
 
     // convert bitmap to an byte array
     private int[] bmp2ChannelArray(Bitmap bmp){

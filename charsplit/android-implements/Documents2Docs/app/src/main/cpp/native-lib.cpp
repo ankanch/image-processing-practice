@@ -11,7 +11,7 @@ Java_com_akakanch_documents2docs_documents2docs_RecentScreened_processImageJNI(
         jint width /* image width */,
         jint height /* image height */,
         jint channels /* image channels */,
-        jint returnimg) {
+        jint returnimg /* return type: 1:alphberts,3:words,2:recognized */) {
 
     // get data and convert it
     jboolean iscopy = false;
@@ -28,11 +28,15 @@ Java_com_akakanch_documents2docs_documents2docs_RecentScreened_processImageJNI(
     std::string imagesting = "";
 
     int typecode = (int)returnimg;
-    if(typecode >100) {
+    if(typecode == 1) {
         int sum = 0;
         imagesting = strinfy(alphaberts, sum);
-    }else{
+    }else if(typecode == 2){
         imagesting = recognize(alphaberts);
+    }else if(typecode == 3){
+        int sum = 0;
+        DLISTIMAGEPACK words = extractWord(image,id);
+        imagesting = strinfy(words, sum);
     }
 
     // just count "<!>" in result str to know how many sub image we get

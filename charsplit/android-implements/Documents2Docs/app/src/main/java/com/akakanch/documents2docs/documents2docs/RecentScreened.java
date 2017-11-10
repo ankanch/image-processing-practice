@@ -1,6 +1,7 @@
 package com.akakanch.documents2docs.documents2docs;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -14,6 +15,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -61,6 +63,7 @@ public class RecentScreened extends AppCompatActivity {
     private ArrayAdapter<RecentItem> aa_recent;
     private DatabaseHelper dbhelper;
     private SQLiteDatabase db ;
+    private Context CurActivitycontext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +72,7 @@ public class RecentScreened extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        CurActivitycontext = this;
         dbhelper = new DatabaseHelper(getApplicationContext());
         lvrecent = (ListView)findViewById(R.id.listview_recent);
         checkAndRequestPermission();
@@ -194,6 +198,14 @@ public class RecentScreened extends AppCompatActivity {
         return BitmapFactory.decodeFile(path,options);
     }
 
+    public Bitmap getImage(String path){
+        if(path.indexOf("content:") >= 0) {
+            return  compressAsJPG(getPicture(Uri.parse(path)));
+        }else{
+            return compressAsJPG(getPicture(path));
+        }
+    }
+
     public Bitmap compressAsJPG(Bitmap bp){
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         bp.compress(Bitmap.CompressFormat.JPEG, 100, out);
@@ -256,6 +268,34 @@ public class RecentScreened extends AppCompatActivity {
         }
     }
 
+    // open exist files.
+    private class openPreiousOne extends AsyncTask<String, Void, Bitmap> {
+
+        final private ProgressDialog loading= new ProgressDialog(CurActivitycontext);
+
+        @Override
+        protected Bitmap doInBackground(String... path) {
+            return getImage(path[0]);
+        }
+
+
+        @Override
+        protected void onPostExecute(Bitmap s) {
+            loading.dismiss();
+            ThumbnailActivity.target_image = s;
+            Intent confirm_screen = new Intent(getApplicationContext(), ThumbnailActivity.class);
+            startActivity(confirm_screen);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            loading.setMessage("处理中...");
+            loading.show();
+            loading.setCancelable(false);
+            loading.setCanceledOnTouchOutside(false);
+        }
+    }
+
     // load recent data from database and generate thumbnails
     private  ArrayList<RecentItem> loadRecentImages(SQLiteDatabase db){
         ArrayList<RecentItem> al_recent = new ArrayList<>();
@@ -310,8 +350,16 @@ public class RecentScreened extends AppCompatActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                RecentItem ri = (RecentItem)adapterView.getItemAtPosition(i);
-                Snackbar.make(view,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
+                final RecentItem ri = (RecentItem)adapterView.getItemAtPosition(i);
+                new openPreiousOne().execute(ri.fpath);
+                //new openPreiousOne().execute(ri.fpath);
+                //Bitmap compressd = getImage(ri.fpath);
+                //ThumbnailActivity.target_image = compressd;
+                //Intent confirm_screen = new Intent(getApplicationContext(), ThumbnailActivity.class);
+                // goto process activity
+                //startActivity(confirm_screen);
+                //Snackbar.make(view,"Opening...",Snackbar.LENGTH_LONG).show();
+
             }
         });
 
@@ -326,20 +374,20 @@ public class RecentScreened extends AppCompatActivity {
                     @Override
                     public boolean onMenuItemClick(MenuItem menuItem) {
                         switch(menuItem.getItemId()){
-                            case R.id.menu_recentitem_delete:
-                                Snackbar.make(v,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
+                            case R.id.menu_recentitem_delete: //delete selected item
+                                Snackbar.make(v,"Item deleted.",Snackbar.LENGTH_LONG).show();
                                 dbhelper.deleteRecentItem(db,ri.filename);
                                 aa_recent.remove(ri);
                                 break;
-                            case R.id.menu_recentitem_viewdata:
-                                Snackbar.make(v,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
+                            case R.id.menu_recentitem_viewdata: //showing data for selected pciture
+                                //Snackbar.make(v,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
                                 break;
                         }
-                        return false;
+                        return true;
                     }
                 });
                 pm.show();
-                return false;
+                return true;
             }
         });
 
@@ -349,6 +397,6 @@ public class RecentScreened extends AppCompatActivity {
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    // returnimg: large than 100 means return all splited images, otherwise, return reconized chars;
+    // returnimg: 1 means return all splited images, 2 for return reconized chars, 3 for return words segmentation ;
     public static native String processImageJNI(int[] ipcData,int width,int height,int channels,int returnimg);
 }
