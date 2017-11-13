@@ -69,11 +69,14 @@ static int debug_alp_count = 0;
         std::vector<int> x_sum;
         std::vector<int> y_sum;
         std::vector<int> ninesampling;      // for nine sampling
+        double horizontal_ratio;            // for ratio feature
+        double vertical_ratio;              // for ratio feature
         int width;
         int height;
         double wh_ratio;
         std::string label;
     };
+
 
     typedef std::vector<ImagePack> LISTIMAGEPACK;
     typedef std::vector<ImagePack2D> LISTIMAGEPACK2D;
@@ -138,6 +141,8 @@ long sum(const PIXEL p,const uint8_t channels){
     }
     return sum;
 }
+
+
 
 /* save image to file */
 void save2File(const IMAGE image,const ImageData &id,const std::string des="image.txt"){
@@ -665,6 +670,44 @@ Features feature_extractor_9Sampling(IMAGE img,ImageData&id,Features& fea){
     return fea;
 }
 
+
+/* get the half-vertical and half-horizontal ratio */
+Features feature_ratio(IMAGE img,ImageData&id,Features&fea){
+    //compute horizontal ratio
+    int hend = int(id.width / 2);
+    int left_sum = 0;
+    int right_sum = 0;
+    for(int i=0;i<id.height;i++){
+        for(int j=0;j<id.width;j++){
+            if( int(img[i][j][0]) == 0 ){
+                if( j < hend){
+                    ++left_sum;
+                }else{
+                    ++right_sum;
+                }
+            }
+        }
+    }
+    //compute vertical ratio
+    int top_sum = 0;
+    int bottom_sum = 0;
+    int tend = int(id.height/2);
+    for(int i=0;i<id.height;i++){
+        for(int j=0;j<id.width;j++){
+            if( int(img[i][j][0]) == 0 ){
+                if( i < tend){
+                    ++bottom_sum;
+                }else{
+                    ++top_sum;
+                }
+            }
+        }
+    }
+    fea.horizontal_ratio = left_sum*1.0/right_sum;
+    fea.vertical_ratio = top_sum*1.0/bottom_sum;
+    return fea;
+}
+
 /* compute cosine */
 const double cosine(std::vector<int> v1,std::vector<int> v2){
     int sum = 0;
@@ -679,7 +722,7 @@ const double cosine(std::vector<int> v1,std::vector<int> v2){
 
 
 /* parse feature structure to string */
-/* feature format: x1,x2@y1,y2@scale@height,width@label@9points#next_feature_section */
+/* feature format: x1,x2@y1,y2@scale@height,width@label@9points#next_feature_section@horizontal_ratio,vertial_ratio */
 std::string feature2string(Features f){
     std::string buf = "";
     for(int i=0;i<f.x_sum.size();i++){
@@ -697,8 +740,9 @@ std::string feature2string(Features f){
     for(int i=0;i<f.ninesampling.size();i++){
         buf += to_string(f.ninesampling[i]) + ",";
     }
-    buf = buf.substr(0,buf.length()-1);
-
+    buf = buf.substr(0,buf.length()-1) + "@";
+    buf += to_string(f.horizontal_ratio) + "," + to_string(f.vertical_ratio);
+    
     return buf;
 }
 
@@ -736,6 +780,10 @@ Features string2feature(std::string s){
         nsps.push_back(atoi(values[i].c_str()));
     }
     f.ninesampling = nsps;
+    // set ratio feature
+    values = split_string(dataframe[6],",");
+    f.horizontal_ratio = atof(values[0].c_str());
+    f.vertical_ratio = atof(values[1].c_str()); 
 
     return f;
 }

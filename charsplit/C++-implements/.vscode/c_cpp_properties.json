@@ -46,6 +46,8 @@
             "name": "Win32",
             "includePath": [
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt",
+                "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
+                "C:/MinGW/x86_64-w64-mingw32/include",
                 "${workspaceRoot}",
                 "c:/MinGW/include/c++/7.2.0",
                 "c:/MinGW/include/c++/7.2.0/x86_64-w64-mingw32",
@@ -62,7 +64,9 @@
             "browse": {
                 "path": [
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt",
+                    "C:/MinGW/x86_64-w64-mingw32/include",
                     "C:/MinGW/include",
+                    "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
                     "${workspaceRoot}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
