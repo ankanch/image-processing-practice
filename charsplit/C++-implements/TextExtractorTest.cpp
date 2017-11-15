@@ -5,8 +5,8 @@
 #include"TextExtractor.h"
 
 #define TEST_WORD_SPLIT true
-#define TEST_ALPHABERTS_SPLIT true
 #define TEST_AW_CONBINATION true
+#define TEST_ALPHABERTS_SPLIT false
 
 using namespace std;
 
@@ -43,7 +43,7 @@ int main(int argc,char**argv){
     }
 
 
-    if(TEST_AW_CONBINATION){                                //FAILED
+    if(TEST_AW_CONBINATION){                                //PASS
         cout<<"\n\nTEST_AW_CONBINATION result="<<recognizeWithFormat(p_words)<<endl;
     }
     

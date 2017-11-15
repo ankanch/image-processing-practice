@@ -69,8 +69,8 @@ static int debug_alp_count = 0;
         std::vector<int> x_sum;
         std::vector<int> y_sum;
         std::vector<int> ninesampling;      // for nine sampling
-        double horizontal_ratio;            // for ratio feature
-        double vertical_ratio;              // for ratio feature
+        double xweight;                 // for data weight on x axis
+        double yweight;                 // for data weight on y axis
         int width;
         int height;
         double wh_ratio;
@@ -671,40 +671,22 @@ Features feature_extractor_9Sampling(IMAGE img,ImageData&id,Features& fea){
 }
 
 
-/* get the half-vertical and half-horizontal ratio */
-Features feature_ratio(IMAGE img,ImageData&id,Features&fea){
-    //compute horizontal ratio
-    int hend = int(id.width / 2);
-    int left_sum = 0;
-    int right_sum = 0;
+/* get the weight feature of the picture */
+Features feature_weight(IMAGE img,ImageData&id,Features&fea){
+    int x_sum = 0;
+    int y_sum = 0;
+    int data_count = 0;
     for(int i=0;i<id.height;i++){
         for(int j=0;j<id.width;j++){
             if( int(img[i][j][0]) == 0 ){
-                if( j < hend){
-                    ++left_sum;
-                }else{
-                    ++right_sum;
-                }
+                x_sum += j;
+                y_sum += i;
+                ++data_count;
             }
         }
     }
-    //compute vertical ratio
-    int top_sum = 0;
-    int bottom_sum = 0;
-    int tend = int(id.height/2);
-    for(int i=0;i<id.height;i++){
-        for(int j=0;j<id.width;j++){
-            if( int(img[i][j][0]) == 0 ){
-                if( i < tend){
-                    ++bottom_sum;
-                }else{
-                    ++top_sum;
-                }
-            }
-        }
-    }
-    fea.horizontal_ratio = left_sum*1.0/right_sum;
-    fea.vertical_ratio = top_sum*1.0/bottom_sum;
+    fea.xweight = x_sum*1.0/data_count/id.width;
+    fea.yweight = y_sum*1.0/data_count/id.height;
     return fea;
 }
 
@@ -717,12 +699,13 @@ const double cosine(std::vector<int> v1,std::vector<int> v2){
         sumv1 += v1[i];
         sumv2 += v2[i];
     }
+    std::cout<<"\tsum="<<sum<<"\tsumv1="<<sumv1<<"\tsumv2="<<sumv2<<std::endl;
     return sum*1.0/(sqrt(sumv1)*sqrt(sumv2));
 } 
 
 
 /* parse feature structure to string */
-/* feature format: x1,x2@y1,y2@scale@height,width@label@9points#next_feature_section@horizontal_ratio,vertial_ratio */
+/* feature format: x1,x2@y1,y2@scale@height,width@label@9points#next_feature_section@xweight,vertial_ratio */
 std::string feature2string(Features f){
     std::string buf = "";
     for(int i=0;i<f.x_sum.size();i++){
@@ -741,7 +724,7 @@ std::string feature2string(Features f){
         buf += to_string(f.ninesampling[i]) + ",";
     }
     buf = buf.substr(0,buf.length()-1) + "@";
-    buf += to_string(f.horizontal_ratio) + "," + to_string(f.vertical_ratio);
+    buf += to_string(f.xweight) + "," + to_string(f.yweight);
     
     return buf;
 }
@@ -782,8 +765,8 @@ Features string2feature(std::string s){
     f.ninesampling = nsps;
     // set ratio feature
     values = split_string(dataframe[6],",");
-    f.horizontal_ratio = atof(values[0].c_str());
-    f.vertical_ratio = atof(values[1].c_str()); 
+    f.xweight = atof(values[0].c_str());
+    f.yweight = atof(values[1].c_str()); 
 
     return f;
 }
@@ -866,17 +849,29 @@ const double error_feature_WHR(const Features img,const Features temp){
     return std::abs( img.wh_ratio - temp.wh_ratio );
 }
 
+/* compute the error of between horizontal ratio and vertical ratio */
+std::pair<double,double> error_feature_weight(const Features img,const Features temp){
+    double x = img.xweight - temp.xweight;
+    double y = img.yweight - temp.yweight;
+    std::pair<double,double> a;
+    a.first = x;
+    a.second = y;
+    return  a;
+}
+
 /* compute similarity */
 const double similarity(const Features img,const Features temp){
     std::vector<double> x_diff = minusWithScale( img.x_sum , temp.x_sum , payoff( temp.height,img.height ) );
     std::vector<double> y_diff = minusWithScale( img.y_sum , temp.y_sum , payoff( temp.width,img.width ) );
     double x_error = meanSquaredError( x_diff , temp.height<=img.height?img.height:temp.height );
     double y_error = meanSquaredError( y_diff , temp.width<=img.width?img.width:temp.width );
+    std::pair<double,double> weightxy = error_feature_weight(img,temp);
     klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
     const double efwhr = error_feature_WHR(img,temp);
     const double simNSPS = cosine(temp.ninesampling,img.ninesampling);
-    return 1.0 - ( 0.6*(x_error + y_error) + 0.2*(1-simNSPS) + 0.2*efwhr ) ;
-    //return 1.0 - ( 0.8*(x_error + y_error) + 0.2*efwhr ) ;
+    std::cout<<"\n\t\tx_err="<<x_error<<"\ty_err="<<y_error<<"\tcos="<<simNSPS<<"\twh_ratio="<<efwhr<<"\n";
+    return  0.6*(x_error + y_error) + 0.2*(1-simNSPS) + 0.2*efwhr ;
+    //return  0.6*(x_error + y_error) + 0.19*(1-simNSPS) + 0.19*efwhr +  0.01*weightxy.first + 0.01*weightxy.second ;
 }
 
 /* predict which alphaberts it is  */
@@ -885,15 +880,16 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     Features f = feature_extractor_projectionmatch(img.image,img.properties,"");
     f = feature_extractor_9Sampling(img.image,img.properties,f);
 
-    double maxv = 0;            // stores max similarity
+    double minv = std::numeric_limits<double>::max();            // stores max similarity
     std::string current="*";    // stores char which matches to the max similarity
     // loop computing cos with the template data
     for(int i=0;i<templatedata.size();i++){
-        klog("------------------round " + to_string(i) + "\tlabel=" + templatedata[i].label );
+        std::cout<<"------------------round "<<to_string(i)<<"\tlabel="<<templatedata[i].label
+                    <<" ("<<current<<")"<<"\t";
         double x = similarity(f,templatedata[i]);
-        klog("similarity:" + to_string(x));
-        if( (x) >= (maxv) ){
-            maxv =x;
+        std::cout<<"\t,similarity:"<<to_string(x)<<std::endl;
+        if( (x) <= (minv) ){
+            minv =x;
             current = templatedata[i].label;
         }
     }
@@ -1110,7 +1106,7 @@ DLISTIMAGEPACK extractWord(uint8_t* img,const ImageData & id){
             }
         }
         average = (average/count_space) + 2;        // change this number if it works badly
-        std::cout<<"average space length="<<average<<std::endl;
+        //std::cout<<"average space length="<<average<<std::endl;
         // start extract words
         klog("split line words....");
         start = end = 0;

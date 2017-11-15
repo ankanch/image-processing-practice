@@ -56,7 +56,7 @@ int main(int argc,char**argv){
                             //extract feature
                             Features f =  feature_extractor_projectionmatch(imagex.image,imagex.properties,to_string(fname[0]));
                             f = feature_extractor_9Sampling(imagex.image,imagex.properties,f);
-                            f = feature_ratio(imagex.image,imagex.properties,f);
+                            f = feature_weight(imagex.image,imagex.properties,f);
                             cout<<"converting to string ...\n";
                             std::string strx = feature2string(f);
                             klog(strx);
