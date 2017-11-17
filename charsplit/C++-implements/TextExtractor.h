@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include"template.h"
+#include"spellchecker.h"
 
 
 // for debug
@@ -694,6 +695,11 @@ Features feature_weight(IMAGE img,ImageData&id,Features&fea){
 const double cosine(std::vector<int> v1,std::vector<int> v2){
     int sum = 0;
     int sumv1=0,sumv2=0;
+    // reverse value (1<>0) in v1 and v2
+    for(int i=0;i<v1.size();i++){
+        v1[i] = std::abs(--v1[i]);
+        v2[i] = std::abs(--v2[i]);
+    }
     for(int i=0;i<v1.size();i++){
         sum += v1[i]*v2[i];
         sumv1 += v1[i];
@@ -870,7 +876,7 @@ const double similarity(const Features img,const Features temp){
     const double efwhr = error_feature_WHR(img,temp);
     const double simNSPS = cosine(temp.ninesampling,img.ninesampling);
     std::cout<<"\n\t\tx_err="<<x_error<<"\ty_err="<<y_error<<"\tcos="<<simNSPS<<"\twh_ratio="<<efwhr<<"\n";
-    return  0.6*(x_error + y_error) + 0.2*(1-simNSPS) + 0.2*efwhr ;
+    return  0.65*(x_error + y_error) + 0.12*(1-simNSPS) + 0.23*efwhr ;
     //return  0.6*(x_error + y_error) + 0.19*(1-simNSPS) + 0.19*efwhr +  0.01*weightxy.first + 0.01*weightxy.second ;
 }
 
@@ -1214,6 +1220,7 @@ std::string recognize(const DLISTIMAGEPACK& data){
 /* input must be words list */
 std::string recognizeWithFormat(const DLISTIMAGEPACK& data){
     std::string result = "";
+    wordlist = loadWords("8wfeq_list.txt");
     for(int i=0;i<data.size();i++){
         LISTIMAGEPACK line = data[i];
         for(int j=0;j<line.size();j++){
@@ -1221,6 +1228,7 @@ std::string recognizeWithFormat(const DLISTIMAGEPACK& data){
             DLISTIMAGEPACK word = extractTextFromWord(line[j].image,line[j].properties);
             klog("recognizing...");
             std::string wordx =  recognize(word);
+            wordx = suggest(wordx);// correct word here
             klog("cache-result: |" + wordx + "| ");
             result += wordx + " ";
             std::cout<<"processing word on line "<<i+1<<",\t"<<j+1<<" th"<<std::endl;
