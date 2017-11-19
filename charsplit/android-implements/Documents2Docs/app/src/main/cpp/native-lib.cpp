@@ -32,7 +32,9 @@ Java_com_akakanch_documents2docs_documents2docs_RecentScreened_processImageJNI(
         int sum = 0;
         imagesting = strinfy(alphaberts, sum);
     }else if(typecode == 2){
-        imagesting = recognize(alphaberts);
+        //imagesting = recognize(alphaberts);
+        DLISTIMAGEPACK words = extractWord(image,id);
+        imagesting = recognizeWithFormat(words);
     }else if(typecode == 3){
         int sum = 0;
         DLISTIMAGEPACK words = extractWord(image,id);
