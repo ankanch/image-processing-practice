@@ -3,9 +3,7 @@
 
 int main(int argc,char**argv){
     std::cout<<"--loading data...\n";
-    wordlist = loadWords("8wfeq_list.txt");
-    //wordlist = loadWords("google-10000-english-no-swears_requencyorder.txt");
-    //wordlist = loadWords("words_alpha.txt");
+    initSpellChecker();
     std::cout<<"--words count="<<wordlist.size()<<std::endl;
 
     std::cout<<"--Test for find(string):\n";

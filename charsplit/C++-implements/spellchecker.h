@@ -2,6 +2,7 @@
 #include<vector>
 #include<fstream>
 #include<algorithm>
+#include <sstream>
 #include<iostream>
 #include"wordslist.h"
 
@@ -19,6 +20,7 @@ typedef std::vector<std::string>::iterator WLITERATOR;
 ****************************************************************************\*/
 static WORDLIST wordlist;
 static std::string alphberts = "abcdefghijklmnopqrstuvwxyz";
+static bool inited = false;
 
 /* this function will load word list from external file to the memeroy */
 const WORDLIST loadWords(const std::string path){
@@ -103,7 +105,7 @@ inline WLITERATOR chooseSmallOne(const WLITERATOR&a,const WLITERATOR&b,const WLI
 }
 
 /* this function suggest a word based on given string */
-const std::string suggest(std::string str){
+inline const std::string suggest(std::string str){
     if(find(str)){
         return str;
     }
@@ -140,4 +142,9 @@ const std::string suggest(std::string str){
 }
 
 //
-
+void initSpellChecker(){
+    if(!inited){
+        //wordlist = loadWords("8wfeq_list.txt");
+        wordlist = loadWords();
+    }
+}
