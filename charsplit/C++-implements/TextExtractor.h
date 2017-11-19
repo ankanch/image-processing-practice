@@ -1220,7 +1220,8 @@ std::string recognize(const DLISTIMAGEPACK& data){
 /* input must be words list */
 std::string recognizeWithFormat(const DLISTIMAGEPACK& data){
     std::string result = "";
-    wordlist = loadWords("8wfeq_list.txt");
+    //wordlist = loadWords("8wfeq_list.txt");
+    wordlist = loadWords();
     for(int i=0;i<data.size();i++){
         LISTIMAGEPACK line = data[i];
         for(int j=0;j<line.size();j++){

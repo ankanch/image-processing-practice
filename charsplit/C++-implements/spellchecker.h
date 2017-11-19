@@ -3,6 +3,7 @@
 #include<fstream>
 #include<algorithm>
 #include<iostream>
+#include"wordslist.h"
 
 typedef std::vector<std::string> WORDLIST;
 typedef std::vector<std::string>::iterator WLITERATOR;
@@ -30,6 +31,19 @@ const WORDLIST loadWords(const std::string path){
         wl.push_back(word);
     }
     return wl;
+}
+
+
+/* this function will load word list from string */
+const WORDLIST loadWords(){
+   std::vector<std::string> tokens;
+   std::string token;
+   std::istringstream tokenStream(wordliststr);
+   while (std::getline(tokenStream, token, ','))
+   {
+      tokens.push_back(token);
+   }
+   return tokens;
 }
 
 /* return a list of word with 1 alphberts differs from original word */
@@ -127,4 +141,3 @@ const std::string suggest(std::string str){
 
 //
 
-//
