@@ -21,11 +21,7 @@ int main(int argc,char**argv){
     }
 
     std::cout<<std::endl<<"--Test for edit2('file'):\n";
-    wl =  edit2("file");
-    std::cout<<"\tsize="<<wl.size()<<std::endl;
-    for(int i=0;i<wl.size();i++){
-        std::cout<<"\t"<<i+1<<":"<<wl[i]<<"\t";
-    }
+    ///std::cout<<"\tedit2 suggest for file="<<edit2("file")<<std::endl;
 
     std::cout<<std::endl<<"--Test for suggest(string):\n";
     std::cout<<"\tsuggest(segmentatiop)="<<suggest("segmentatiop")<<"\t\texpect: "<<"segmentation"<<std::endl;

@@ -6,8 +6,12 @@
 #include<iostream>
 #include"wordslist.h"
 
+#ifndef SPELL_CHECKER
+#define SPELL_CHECKER
 typedef std::vector<std::string> WORDLIST;
 typedef std::vector<std::string>::iterator WLITERATOR;
+#endif
+
 
 /*****************************************************************************\
 ***                                                                        ***\   
@@ -48,6 +52,22 @@ const WORDLIST loadWords(){
    return tokens;
 }
 
+/* this function try to find if a given word is valid */
+inline const bool find(const std::string& word){
+    if( (std::find(wordlist.begin(),wordlist.end(),word)) == wordlist.end() ){
+        return false;
+    }
+    return true;
+}
+
+inline WLITERATOR chooseSmallOne(const WLITERATOR&a,const WLITERATOR&b,const WLITERATOR&zero){
+    if( std::distance(zero,a  ) <= std::distance(zero,b) ){
+        return a;
+    }
+    return b;
+}
+
+
 /* return a list of word with 1 alphberts differs from original word */
 inline const WORDLIST edit1(const std::string& word){
     WORDLIST wl;
@@ -68,10 +88,11 @@ inline const WORDLIST edit1(const std::string& word){
     return wl;
 }
 
-inline const WORDLIST edit2(const std::string& word){
-    WORDLIST wl;
+inline const std::string edit2(const std::string& word){
+    //WORDLIST wl;
     std::string newword;
     std::string ww = "";
+    WLITERATOR it,minit = wordlist.end();
     //generate two alphberts replace
     for(int j=0;j<word.length();++j){
         for(int k=0;k<word.length();++k){
@@ -82,27 +103,16 @@ inline const WORDLIST edit2(const std::string& word){
                 for( auto&b : alphberts){
                     ww = word;
                     ww.replace(j,1,1,a).replace(k,1,1,b); 
-                    wl.push_back(ww);
+                    it = std::find(wordlist.begin(), wordlist.end(), ww); 
+                    if( it != wordlist.end() ){
+                        minit = chooseSmallOne(it,minit,wordlist.begin());
+                    }
+                    //wl.push_back(ww);
                 }
             }
         }
     }
-    return wl;
-}
-
-/* this function try to find if a given word is valid */
-inline const bool find(const std::string& word){
-    if( (std::find(wordlist.begin(),wordlist.end(),word)) == wordlist.end() ){
-        return false;
-    }
-    return true;
-}
-
-inline WLITERATOR chooseSmallOne(const WLITERATOR&a,const WLITERATOR&b,const WLITERATOR&zero){
-    if( std::distance(zero,a  ) <= std::distance(zero,b) ){
-        return a;
-    }
-    return b;
+    return *minit;
 }
 
 /* this function suggest a word based on given string */
@@ -111,7 +121,6 @@ inline const std::string suggest(const std::string& str){
         return str;
     }
     WORDLIST wl1 = edit1(str);
-    //WORDLIST wl2 = edit2(str);
 
     WLITERATOR it;
     WLITERATOR minit = wordlist.end();
@@ -126,17 +135,7 @@ inline const std::string suggest(const std::string& str){
         return *minit;
     }
 
-    /*/search in wl2
-    minit = wordlist.end();
-    for(WLITERATOR i=wl2.begin();i<wl2.end();++i){
-        it = std::find(wordlist.begin(), wordlist.end(), *i);    
-        if( it != wordlist.end() ){
-            minit = chooseSmallOne(it,minit,wordlist.begin());
-        }
-    }
-    if( minit != wordlist.end() ){
-        return *minit;
-    }/*/
+    //return  edit2(str);
 
     //no suggest
     return str;

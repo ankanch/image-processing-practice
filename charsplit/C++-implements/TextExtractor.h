@@ -82,6 +82,9 @@ static int debug_alp_count = 0;
     typedef std::vector<ImagePack> LISTIMAGEPACK;
     typedef std::vector<ImagePack2D> LISTIMAGEPACK2D;
     typedef std::vector<LISTIMAGEPACK> DLISTIMAGEPACK;
+    typedef std::vector<ImagePack>::iterator LISTIMAGEPACKITERATOR;
+    typedef std::vector<ImagePack2D>::iterator LISTIMAGEPACK2DITERATOR;
+    typedef std::vector<LISTIMAGEPACK>::iterator DLISTIMAGEPACKITERATOR;
 #endif
 
 void save_string(const std::string data,const std::string path);
@@ -863,7 +866,7 @@ std::pair<double,double> error_feature_weight(const Features img,const Features 
 }
 
 /* compute similarity */
-const double similarity(const Features img,const Features temp){
+inline const double similarity(const Features img,const Features temp){
     std::vector<double> x_diff = minusWithScale( img.x_sum , temp.x_sum , payoff( temp.height,img.height ) );
     std::vector<double> y_diff = minusWithScale( img.y_sum , temp.y_sum , payoff( temp.width,img.width ) );
     double x_error = meanSquaredError( x_diff , temp.height<=img.height?img.height:temp.height );
@@ -886,13 +889,21 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     double minv = std::numeric_limits<double>::max();            // stores max similarity
     std::string current="*";    // stores char which matches to the max similarity
     // loop computing cos with the template data
+    for(auto& temp: templatedata){
+        double x = similarity(f,temp);
+        if( x <= minv ){
+            minv =x;
+            current = temp.label;
+        }
+    }
+    /*/
     for(int i=0;i<templatedata.size();++i){
         double x = similarity(f,templatedata[i]);
         if( (x) <= (minv) ){
             minv =x;
             current = templatedata[i].label;
         }
-    }
+    }/*/
     
     // return data
     return current;
@@ -1189,22 +1200,21 @@ DLISTIMAGEPACK extractTextFromWord(const IMAGE word,const ImageData & id){
 
 /* ==============================================Recognize text fucntion here================================== */
 /* recognize a single image */
-std::string recognize(const DLISTIMAGEPACK& data){
+std::string recognize(DLISTIMAGEPACK& data){
     //start recognize
     std::string result = "";
     klog("loading...");
     const std::vector<Features> templatedata =  parseTemplateData(pcadata);
     klog("predicting...");
-    for(int i=0;i<data.size();++i){
-        LISTIMAGEPACK alpha = data[i];
-        for(int j=0;j<alpha.size();++j){
+    for(DLISTIMAGEPACKITERATOR i=data.begin();i<data.end();++i){
+        LISTIMAGEPACK alpha = *i;
+        for(LISTIMAGEPACKITERATOR j=alpha.begin();j<alpha.end();++j){
             //delete empty line
-            alpha[j].image = delteEmptyline(alpha[j].image,alpha[j].properties);
-            ImagePack2D d2line = depixelize(alpha[j].image,alpha[j].properties);
-            std::string re = predictAlphberts(alpha[j],templatedata);
+            (*j).image = delteEmptyline((*j).image,(*j).properties);
+            ImagePack2D d2line = depixelize((*j).image,(*j).properties);
+            std::string re = predictAlphberts(*j,templatedata);
             result += re;
-            printMatrix(alpha[j].image,alpha[j].properties);
-            //return result;
+            printMatrix((*j).image,(*j).properties);
         }
     }
     return result;
@@ -1215,14 +1225,12 @@ std::string recognize(const DLISTIMAGEPACK& data){
 std::string recognizeWithFormat(const DLISTIMAGEPACK& data){
     std::string result = "";
     initSpellChecker();
-    for(int i=0;i<data.size();++i){
-        LISTIMAGEPACK line = data[i];
-        for(int j=0;j<line.size();++j){
-            DLISTIMAGEPACK word = extractTextFromWord(line[j].image,line[j].properties);
+    for(auto& line: data){
+        for(auto& wordimg: line){
+            DLISTIMAGEPACK word = extractTextFromWord(wordimg.image,wordimg.properties);
             std::string wordx =  recognize(word);
             wordx = suggest(wordx);// correct word here
             result += wordx + " ";
-            std::cout<<"processing word on line "<<i+1<<",\t"<<j+1<<" th"<<std::endl;
         }
         result += "\r\n";
     }
