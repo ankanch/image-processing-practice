@@ -23,7 +23,7 @@ static std::string alphberts = "abcdefghijklmnopqrstuvwxyz";
 static bool inited = false;
 
 /* this function will load word list from external file to the memeroy */
-const WORDLIST loadWords(const std::string path){
+const WORDLIST loadWords(const std::string& path){
     WORDLIST wl;
     std::ifstream infile(path.c_str());
     std::string line;
@@ -49,25 +49,26 @@ const WORDLIST loadWords(){
 }
 
 /* return a list of word with 1 alphberts differs from original word */
-inline const WORDLIST edit1(const std::string word){
+inline const WORDLIST edit1(const std::string& word){
     WORDLIST wl;
     std::string newword;
+    std::string ww = "";
     //generate alphberts replace
     for(int j=0;j<word.length();++j){
-        for(int i=0;i<alphberts.length();++i){
-            std::string ww = word;
-            wl.push_back( ww.replace(j,1,1,alphberts[i]) );
+        for(auto&a : alphberts){
+            ww = word;
+            wl.push_back( ww.replace(j,1,1,a) );
         }
     }
     // generate delete one alphberts
     for(int i=0;i<word.length();++i){
-        std::string ww = word;
+        ww = word;
         wl.push_back( ww.erase(i,1) );
     }    
     return wl;
 }
 
-inline const WORDLIST edit2(const std::string word){
+inline const WORDLIST edit2(const std::string& word){
     WORDLIST wl;
     std::string newword;
     std::string ww = "";
@@ -84,23 +85,14 @@ inline const WORDLIST edit2(const std::string word){
                     wl.push_back(ww);
                 }
             }
-            /*/
-            for(int i=0;i<alphberts.length();++i){
-                for(int l=0;l<alphberts.length();++l){
-                    std::string ww = word;
-                    ww.replace(j,1,1,alphberts[i]).replace(k,1,1,alphberts[l]); 
-                    wl.push_back(ww);
-                }
-            }/*/
         }
     }
     return wl;
 }
 
 /* this function try to find if a given word is valid */
-inline const bool find(std::string word){
-    WLITERATOR it = std::find(wordlist.begin(),wordlist.end(),word);
-    if( it == wordlist.end() ){
+inline const bool find(const std::string& word){
+    if( (std::find(wordlist.begin(),wordlist.end(),word)) == wordlist.end() ){
         return false;
     }
     return true;
@@ -114,7 +106,7 @@ inline WLITERATOR chooseSmallOne(const WLITERATOR&a,const WLITERATOR&b,const WLI
 }
 
 /* this function suggest a word based on given string */
-inline const std::string suggest(std::string str){
+inline const std::string suggest(const std::string& str){
     if(find(str)){
         return str;
     }
