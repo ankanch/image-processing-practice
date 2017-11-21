@@ -3,6 +3,7 @@ package com.akakanch.documents2docs.documents2docs;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.AsyncTask;
@@ -12,6 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -29,6 +31,10 @@ public class ThumbnailActivity extends AppCompatActivity {
     private Context context;
 
     public static Bitmap target_image;      // target image to process
+    private DatabaseHelper dbHelper;  //sotres database help object
+    private SQLiteDatabase db;        // stores database instance
+    public static RecentItem ri;            // stores rencent item
+    public static ArrayAdapter<RecentItem> aa_recent;  //stores recent item adaptor
 
 
     @Override
@@ -39,6 +45,9 @@ public class ThumbnailActivity extends AppCompatActivity {
 
         iv_thumbnail = (ImageView) findViewById(R.id.imageView_thumbnail);
         setTitle("Preview");
+
+        dbHelper = new DatabaseHelper(getApplicationContext());
+        db = dbHelper.getWritableDatabase();
 
         // get image data
         iv_thumbnail.setImageBitmap(target_image);
@@ -85,6 +94,10 @@ public class ThumbnailActivity extends AppCompatActivity {
             Log.v("result=",s);
             loading.dismiss();
             result = s;
+            //insert into database
+            ri.data = result;
+            dbHelper.insertRecentItem(db,ri);
+            aa_recent.insert(ri,0);
             // open text out activity
             TextOutActivity.textout = result;
             Intent textout_screen = new Intent(getApplicationContext(), TextOutActivity.class);

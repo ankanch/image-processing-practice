@@ -6,8 +6,12 @@
 #include<iostream>
 #include"wordslist.h"
 
+#ifndef SPELL_CHECKER
+#define SPELL_CHECKER
 typedef std::vector<std::string> WORDLIST;
 typedef std::vector<std::string>::iterator WLITERATOR;
+#endif
+
 
 /*****************************************************************************\
 ***                                                                        ***\   
@@ -23,7 +27,7 @@ static std::string alphberts = "abcdefghijklmnopqrstuvwxyz";
 static bool inited = false;
 
 /* this function will load word list from external file to the memeroy */
-const WORDLIST loadWords(const std::string path){
+const WORDLIST loadWords(const std::string& path){
     WORDLIST wl;
     std::ifstream infile(path.c_str());
     std::string line;
@@ -48,59 +52,9 @@ const WORDLIST loadWords(){
    return tokens;
 }
 
-/* return a list of word with 1 alphberts differs from original word */
-inline const WORDLIST edit1(const std::string word){
-    WORDLIST wl;
-    std::string newword;
-    //generate alphberts replace
-    for(int j=0;j<word.length();++j){
-        for(int i=0;i<alphberts.length();++i){
-            std::string ww = word;
-            wl.push_back( ww.replace(j,1,1,alphberts[i]) );
-        }
-    }
-    // generate delete one alphberts
-    for(int i=0;i<word.length();++i){
-        std::string ww = word;
-        wl.push_back( ww.erase(i,1) );
-    }    
-    return wl;
-}
-
-inline const WORDLIST edit2(const std::string word){
-    WORDLIST wl;
-    std::string newword;
-    std::string ww = "";
-    //generate two alphberts replace
-    for(int j=0;j<word.length();++j){
-        for(int k=0;k<word.length();++k){
-            if(j == k){
-                break;
-            }
-            for( auto&a : alphberts){
-                for( auto&b : alphberts){
-                    ww = word;
-                    ww.replace(j,1,1,a).replace(k,1,1,b); 
-                    wl.push_back(ww);
-                }
-            }
-            /*/
-            for(int i=0;i<alphberts.length();++i){
-                for(int l=0;l<alphberts.length();++l){
-                    std::string ww = word;
-                    ww.replace(j,1,1,alphberts[i]).replace(k,1,1,alphberts[l]); 
-                    wl.push_back(ww);
-                }
-            }/*/
-        }
-    }
-    return wl;
-}
-
 /* this function try to find if a given word is valid */
-inline const bool find(std::string word){
-    WLITERATOR it = std::find(wordlist.begin(),wordlist.end(),word);
-    if( it == wordlist.end() ){
+inline const bool find(const std::string& word){
+    if( (std::find(wordlist.begin(),wordlist.end(),word)) == wordlist.end() ){
         return false;
     }
     return true;
@@ -113,41 +67,73 @@ inline WLITERATOR chooseSmallOne(const WLITERATOR&a,const WLITERATOR&b,const WLI
     return b;
 }
 
+
+/* return a list of word with 1 alphberts differs from original word */
+inline const std::string edit1(const std::string& word){
+    std::string ww = "";
+    WLITERATOR it,minit = wordlist.end();
+    //generate alphberts replace
+    for(int j=0;j<word.length();++j){
+        for(auto&a : alphberts){
+            ww = word;
+            ww.replace(j,1,1,a);
+            it = std::find(wordlist.begin(), wordlist.end(), ww);    
+            if( it != wordlist.end() ){
+                minit = chooseSmallOne(it,minit,wordlist.begin());
+            }
+        }
+    }
+    if(minit != wordlist.end()){
+        return *minit;
+    }
+    // start delete alphaberts
+    for(int i=0;i<word.length();++i){
+        ww = word;
+        ww.erase(i,1);
+        it = std::find(wordlist.begin(), wordlist.end(), ww);    
+        if( it != wordlist.end() ){
+            minit = chooseSmallOne(it,minit,wordlist.begin());
+        }
+    }
+    if(minit != wordlist.end()){
+        return *minit;
+    } 
+    return word;
+}
+
+inline const std::string edit2(const std::string& word){
+    //WORDLIST wl;
+    std::string newword;
+    std::string ww = "";
+    WLITERATOR it,minit = wordlist.end();
+    //generate two alphberts replace
+    for(int j=0;j<word.length();++j){
+        for(int k=0;k<word.length();++k){
+            if(j == k){
+                break;
+            }
+            for( auto&a : alphberts){
+                for( auto&b : alphberts){
+                    ww = word;
+                    ww.replace(j,1,1,a).replace(k,1,1,b); 
+                    it = std::find(wordlist.begin(), wordlist.end(), ww); 
+                    if( it != wordlist.end() ){
+                        minit = chooseSmallOne(it,minit,wordlist.begin());
+                    }
+                    //wl.push_back(ww);
+                }
+            }
+        }
+    }
+    return *minit;
+}
+
 /* this function suggest a word based on given string */
-inline const std::string suggest(std::string str){
+inline const std::string suggest(const std::string& str){
     if(find(str)){
         return str;
     }
-    WORDLIST wl1 = edit1(str);
-    //WORDLIST wl2 = edit2(str);
-
-    WLITERATOR it;
-    WLITERATOR minit = wordlist.end();
-    //search in wl1
-    for(WLITERATOR i=wl1.begin();i<wl1.end();++i){
-        it = std::find(wordlist.begin(), wordlist.end(), *i);    
-        if( it != wordlist.end() ){
-            minit = chooseSmallOne(it,minit,wordlist.begin());
-        }
-    }
-    if( minit != wordlist.end() ){
-        return *minit;
-    }
-
-    /*/search in wl2
-    minit = wordlist.end();
-    for(WLITERATOR i=wl2.begin();i<wl2.end();++i){
-        it = std::find(wordlist.begin(), wordlist.end(), *i);    
-        if( it != wordlist.end() ){
-            minit = chooseSmallOne(it,minit,wordlist.begin());
-        }
-    }
-    if( minit != wordlist.end() ){
-        return *minit;
-    }/*/
-
-    //no suggest
-    return str;
+    return edit1(str);
 }
 
 //

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/lineqrlayout_texthistory"
+        android:layout_width="395dp"
+        android:layout_height="wrap_content"
+        android:background="@color/colorAccent"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="0dp"
+        android:layout_marginLeft="0dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginRight="0dp"
+        app:layout_constraintRight_toRightOf="parent">
+
+        <TextView
+            android:id="@+id/textView_texthistory_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginTop="10sp"
+            android:layout_marginBottom="10sp"
+            android:text="Get Text"
+            android:textAlignment="center"
+            android:textSize="24sp" />
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/editText_texthistory"
+        android:layout_width="match_parent"
+        android:layout_height="198dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="8dp"
+        android:ems="10"
+        android:gravity="top|left"
+        android:inputType="text|textMultiLine"
+        android:text="History content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/lineqrlayout_texthistory" />
+
+    <Button
+        android:id="@+id/button_texthistory_ok"
+        style="@style/Widget.AppCompat.Button.Borderless.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="66dp"
+        android:layout_marginTop="8dp"
+        android:text="OK"
+        android:textColor="@android:color/darker_gray"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editText_texthistory" />
+
+    <Button
+        android:id="@+id/button_texthistory_copytext"
+        style="@style/Widget.AppCompat.Button.Borderless.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="39dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="8dp"
+        android:text="Copy Text"
+        android:textColor="@android:color/holo_orange_dark"
+        app:layout_constraintHorizontal_bias="0.194"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/button_texthistory_ok"
+        app:layout_constraintTop_toBottomOf="@+id/editText_texthistory" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginTop="15sp"
+        android:layout_marginBottom="10sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button_texthistory_copytext"
+        app:layout_constraintHorizontal_bias="0.498" />
+
+</android.support.constraint.ConstraintLayout>

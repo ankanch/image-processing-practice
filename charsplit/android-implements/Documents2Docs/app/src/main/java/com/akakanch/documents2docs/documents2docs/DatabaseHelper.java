@@ -41,8 +41,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void insertRecentItem(SQLiteDatabase db,RecentItem ri){
         String SQL_INSERT_RECENT_ITEM =
-                "INSERT INTO RECENTLIST(FILENAME,PATH) VALUES(\"" +
+                "INSERT INTO RECENTLIST(FILENAME,DATA,PATH) VALUES(\"" +
                         ri.filename + "\",\""  +
+                        ri.data + "\",\""   +
                         ri.fpath +"\")";
         db.execSQL(SQL_INSERT_RECENT_ITEM);
     }

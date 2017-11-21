@@ -26,6 +26,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
+        app:rippleColor="@android:color/transparent"
         app:srcCompat="@android:drawable/ic_menu_camera" />
 
     <include layout="@layout/content_recent_screened"
@@ -36,11 +37,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical|center_horizontal"
-        android:clickable="true"
         android:layout_marginBottom="75dp"
         android:layout_marginRight="16dp"
+        android:clickable="true"
+        app:elevation="1dp"
         app:layout_anchor="@+id/include"
         app:layout_anchorGravity="bottom|right"
+        app:rippleColor="@android:color/transparent"
         app:srcCompat="@android:drawable/ic_input_add" />
 
 </android.support.design.widget.CoordinatorLayout>

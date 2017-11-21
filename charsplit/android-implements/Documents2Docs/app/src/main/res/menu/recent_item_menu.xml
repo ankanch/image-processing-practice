@@ -3,5 +3,5 @@
     <item android:id="@+id/menu_recentitem_delete"
         android:title="delete"/>
     <item android:id="@+id/menu_recentitem_viewdata"
-        android:title="view data"/>
+        android:title="reprocess"/>
 </menu>

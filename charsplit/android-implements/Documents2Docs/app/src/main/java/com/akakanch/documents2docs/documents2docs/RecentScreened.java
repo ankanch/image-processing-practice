@@ -2,6 +2,8 @@ package com.akakanch.documents2docs.documents2docs;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -22,9 +24,12 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -96,9 +101,6 @@ public class RecentScreened extends AppCompatActivity {
         createDirIfNotExists(imagePath);
         // connect to database
         db = dbhelper.getWritableDatabase();
-        //al_recent = loadRecentImages(db);
-        //aa_recent = new RecentItemAdaptor(getApplicationContext(),al_recent);
-        //lvrecent.setAdapter(aa_recent);
         new LoadAllRecentInBackground().execute(db);
         setListenerOnListView(lvrecent);
     }
@@ -162,15 +164,17 @@ public class RecentScreened extends AppCompatActivity {
             }else if( requestCode == REQUEST_PICK_IMAGE ){
                 Toast.makeText(this,"open image" + data.getData(), Toast.LENGTH_LONG).show();
                 Bitmap bp = getPicture(data.getData());
-                bp = compressAsJPG(bp);
+                //bp = compressAsJPG(bp);
                 ThumbnailActivity.target_image = bp;
                 Intent confirm_screen = new Intent(getApplicationContext(), ThumbnailActivity.class);
                 //add data to recentscreened
                 String furi = data.getData().toString();
                 File f = new File(furi);
                 RecentItem ri = new RecentItem(f.getName() ,"",bp,furi);
-                dbhelper.insertRecentItem(db,ri);
-                aa_recent.insert(ri,0);
+                //dbhelper.insertRecentItem(db,ri);
+                //aa_recent.insert(ri,0);
+                ThumbnailActivity.ri = ri;
+                ThumbnailActivity.aa_recent = aa_recent;
                 // goto process activity
                 startActivity(confirm_screen);
             }
@@ -350,15 +354,30 @@ public class RecentScreened extends AppCompatActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                final RecentItem ri = (RecentItem)adapterView.getItemAtPosition(i);
-                new openPreiousOne().execute(ri.fpath);
-                //new openPreiousOne().execute(ri.fpath);
-                //Bitmap compressd = getImage(ri.fpath);
-                //ThumbnailActivity.target_image = compressd;
-                //Intent confirm_screen = new Intent(getApplicationContext(), ThumbnailActivity.class);
-                // goto process activity
-                //startActivity(confirm_screen);
-                //Snackbar.make(view,"Opening...",Snackbar.LENGTH_LONG).show();
+                RecentItem ri = (RecentItem)adapterView.getAdapter().getItem(i);
+                LayoutInflater li = LayoutInflater.from(CurActivitycontext);
+                final View TexthistoryDlgView = li.inflate(R.layout.layout_texthistory, null);
+                final AlertDialog.Builder builder = new AlertDialog.Builder(CurActivitycontext);
+                builder.setView(TexthistoryDlgView);
+                final AlertDialog dlg = builder.show();
+                dlg.setCanceledOnTouchOutside(false);
+                ((EditText)TexthistoryDlgView.findViewById(R.id.editText_texthistory)).setText(ri.data);
+                TexthistoryDlgView.findViewById(R.id.button_texthistory_ok).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        dlg.dismiss();
+                    }
+                });
+                TexthistoryDlgView.findViewById(R.id.button_texthistory_copytext).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        String textout = ((EditText)TexthistoryDlgView.findViewById(R.id.editText_texthistory)).getText().toString();
+                        ClipData clip = ClipData.newPlainText("document2docs", textout);
+                        clipboard.setPrimaryClip(clip);
+                        Snackbar.make(view, "Text has been clipped to the clipboard", Snackbar.LENGTH_LONG).show();
+                    }
+                });
 
             }
         });
@@ -370,6 +389,7 @@ public class RecentScreened extends AppCompatActivity {
                 final PopupMenu pm = new PopupMenu(getApplicationContext(),view);
                 pm.getMenuInflater().inflate(R.menu.recent_item_menu, pm.getMenu());
                 final View v = view;
+                final int position = i;
                 pm.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem menuItem) {
@@ -381,6 +401,8 @@ public class RecentScreened extends AppCompatActivity {
                                 break;
                             case R.id.menu_recentitem_viewdata: //showing data for selected pciture
                                 //Snackbar.make(v,"You clicked me!fp="+ri.fpath,Snackbar.LENGTH_LONG).show();
+                                final RecentItem ri = (RecentItem)adapterView.getItemAtPosition(position);
+                                new openPreiousOne().execute(ri.fpath);
                                 break;
                         }
                         return true;
