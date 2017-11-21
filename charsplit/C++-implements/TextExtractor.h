@@ -289,34 +289,32 @@ const IMAGE to_Martix(uint8_t* img,const ImageData & id){
     return mat;
 }
 
-/* set background to 0, text to 1 */
-const IMAGE Thresholding(IMAGE img,const ImageData& id){
+/* set background to 1, text to 0 */
+const IMAGE Thresholding(IMAGE& img,const ImageData& id){
     std::string hist = "";
     //first count 0 to 255 pixel value count
-    std::vector<int> pixelcount;
-    for(int i=0;i<256;++i){
-        int buf_count=0;
-        for(int h=0;h<id.height;h++){
-            for(int w=0;w<id.width;w++){
-                if(int(img[h][w][0]) == i){
-                    ++buf_count;
-                }
-            }
+    std::vector<int> pixelcount(256);
+    for(int i=0;i<id.height;++i){
+        for(int j=0;j<id.width;++j){
+            ++pixelcount[ img[i][j][0] ];
         }
-        hist += to_string(buf_count) + ",";
-        pixelcount.push_back(buf_count);
+    }
+    for(auto&a : pixelcount){
+        hist += to_string(a);
+        hist += ",";
     }
     save_string( "[" + hist.substr(0,hist.length() -1 ) + "]" ,"cache/hist.txt");
-
-    std::vector<int>::iterator max_pos = std::max_element(pixelcount.begin(),pixelcount.end());
-    int max_value = 0;
-    klog(max_value);
-    // run 
-    // start split backgroudn color and forecolor
-    for(int i=0;i<pixelcount.size();++i){
-
+    // start split backgroud color and forecolor
+    int minvalue = 10;
+    for(std::vector<int>::iterator it=pixelcount.begin()+1;it<pixelcount.end();++it){
+        if(*it >= pixelcount[0]){
+            minvalue = std::distance(pixelcount.begin(),it)/5*4;
+            break;
+        }
     }
-
+    // set background to 1, data to 1
+    img = set_lessThan2Value(img,id,1,minvalue);  
+    img = set_largeThan2Value(img,id,0,minvalue); 
 
     return img;
 }
@@ -1018,8 +1016,10 @@ DLISTIMAGEPACK extractWord(uint8_t* img,const ImageData & id){
     save_string( numpylize(image,id) ,"cache/raw_image.txt");
     ImagePack grayscaleimgpack = to_grayScale(image,id);
     /* 1 for background, 0 for data */
-    grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,180);  
-    grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,180); 
+    Thresholding(grayscaleimgpack.image,grayscaleimgpack.properties);
+    //grayscaleimgpack.image = set_lessThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,1,180);  
+    //grayscaleimgpack.image = set_largeThan2Value(grayscaleimgpack.image,grayscaleimgpack.properties,0,180); 
+    exportImage(grayscaleimgpack,"thresholding_img.txt" );
     klog("start scanning on y...");
     int *ones_on_y = new int[grayscaleimgpack.properties.height];
     for(int i=0;i<grayscaleimgpack.properties.height;++i){
