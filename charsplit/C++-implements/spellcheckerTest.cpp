@@ -14,11 +14,7 @@ int main(int argc,char**argv){
     std::cout<<"\tfind('awesome')= "<<find("awesome")<<std::endl;
 
     std::cout<<std::endl<<"--Test for edit1('file'):\n";
-    WORDLIST wl =  edit1("file");
-    std::cout<<"\tsize="<<wl.size()<<std::endl;
-    for(int i=0;i<wl.size();i++){
-        std::cout<<"\t"<<i+1<<":"<<wl[i]<<"\t";
-    }
+    std::cout<<"\tedit1 suggest for file="<< edit1("file")<<std::endl;
 
     std::cout<<std::endl<<"--Test for edit2('file'):\n";
     ///std::cout<<"\tedit2 suggest for file="<<edit2("file")<<std::endl;

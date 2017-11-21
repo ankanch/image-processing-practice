@@ -70,8 +70,7 @@ static int debug_alp_count = 0;
         std::vector<int> x_sum;
         std::vector<int> y_sum;
         std::vector<int> ninesampling;      // for nine sampling
-        double xweight;                 // for data weight on x axis
-        double yweight;                 // for data weight on y axis
+        int circle;                         // record if there is a circle in the image
         int width;
         int height;
         double wh_ratio;
@@ -528,22 +527,12 @@ const std::string strinfy(DLISTIMAGEPACK dpack,int&sum){
                 for(int z=0;z<linecontainer[j].properties.height;z++){
                     for(int l=0;l<linecontainer[j].properties.width;l++){
                         buf += to_string(int(linecontainer[j].image[z][l][0])) + ",";
-                        //++mmm;
-                        //std::cout<<z<<","<<l<<"\t"<<mmm<<"\t:"<<int(linecontainer[j].image[z][l][0])<<std::endl;
                     }
                 }
                 buf = buf.substr(0,buf.length() - 1) + "]@";
                 buf += properties;
                 result += buf;
                 sum++;
-                    /*/
-                    std::cout<<buf<<std::endl;
-                    std::cout<<linecontainer[j].properties.width<<","<<linecontainer[j].properties.height<<std::endl;
-                    std::cout<<properties<<std::endl;
-                    while(true){
-                        ;
-                    }
-                    /*/
             }
         }
     }
@@ -676,22 +665,49 @@ Features feature_extractor_9Sampling(IMAGE img,ImageData&id,Features& fea){
 
 
 /* get the weight feature of the picture */
-Features feature_weight(IMAGE img,ImageData&id,Features&fea){
-    int x_sum = 0;
-    int y_sum = 0;
-    int data_count = 0;
+void feature_circle(IMAGE img,ImageData&id,Features&fea){
+    // scan from left to right
+    int lcount = 0;
     for(int i=0;i<id.height;++i){
+        int bufx = 0;
+        bool nof = false;
         for(int j=0;j<id.width;++j){
-            if( int(img[i][j][0]) == 0 ){
-                x_sum += j;
-                y_sum += i;
-                ++data_count;
+            if(img[i][j][0] == 0 && !nof){
+                ++bufx;
+                nof = true;
+            }else if(img[i][j][0]== 1 && nof){
+                nof = false;
             }
         }
+        if(bufx >= 2){
+            ++lcount;
+        }
     }
-    fea.xweight = x_sum*1.0/data_count/id.width;
-    fea.yweight = y_sum*1.0/data_count/id.height;
-    return fea;
+
+    //scan from top to bottom
+    int vcount = 0;
+    for(int i=0;i<id.width;++i){
+        int bufx = 0;
+        bool nof = false;
+        for(int j=0;j<id.height;++j){
+            if(img[j][i][0] == 0 && !nof){
+                ++bufx;
+                nof = true;
+            }else if(img[j][i][0]== 1 && nof){
+                nof = false;
+            }
+        }
+        if(bufx >= 2){
+            ++vcount;
+        }
+    }
+
+    //make sure the point exist
+    if(lcount > 0 && vcount > 0){
+        fea.circle = 1;
+        return;
+    }
+    fea.circle = 0;
 }
 
 /* compute cosine */
@@ -732,7 +748,7 @@ std::string feature2string(Features f){
         buf += to_string(f.ninesampling[i]) + ",";
     }
     buf = buf.substr(0,buf.length()-1) + "@";
-    buf += to_string(f.xweight) + "," + to_string(f.yweight);
+    buf += to_string(f.circle) ;
     
     return buf;
 }
@@ -772,9 +788,7 @@ Features string2feature(std::string s){
     }
     f.ninesampling = nsps;
     // set ratio feature
-    values = split_string(dataframe[6],",");
-    f.xweight = atof(values[0].c_str());
-    f.yweight = atof(values[1].c_str()); 
+    f.circle = atoi(dataframe[6].c_str());
 
     return f;
 }
@@ -855,29 +869,17 @@ const double error_feature_WHR(const Features img,const Features temp){
     return std::abs( img.wh_ratio - temp.wh_ratio );
 }
 
-/* compute the error of between horizontal ratio and vertical ratio */
-std::pair<double,double> error_feature_weight(const Features img,const Features temp){
-    double x = img.xweight - temp.xweight;
-    double y = img.yweight - temp.yweight;
-    std::pair<double,double> a;
-    a.first = x;
-    a.second = y;
-    return  a;
-}
-
 /* compute similarity */
 inline const double similarity(const Features img,const Features temp){
     std::vector<double> x_diff = minusWithScale( img.x_sum , temp.x_sum , payoff( temp.height,img.height ) );
     std::vector<double> y_diff = minusWithScale( img.y_sum , temp.y_sum , payoff( temp.width,img.width ) );
     double x_error = meanSquaredError( x_diff , temp.height<=img.height?img.height:temp.height );
     double y_error = meanSquaredError( y_diff , temp.width<=img.width?img.width:temp.width );
-    std::pair<double,double> weightxy = error_feature_weight(img,temp);
-    klog("x_error=" + to_string(x_error) + "\ty_error=" + to_string(y_error));
     const double efwhr = error_feature_WHR(img,temp);
     const double simNSPS = cosine(temp.ninesampling,img.ninesampling);
-    std::cout<<"\n\t\tx_err="<<x_error<<"\ty_err="<<y_error<<"\tcos="<<simNSPS<<"\twh_ratio="<<efwhr<<"\n";
+    //std::cout<<"\n\t\tx_err="<<x_error<<"\ty_err="<<y_error<<"\tcos="<<simNSPS<<"\twh_ratio="<<efwhr<<"\n";
     return  0.65*(x_error + y_error) + 0.12*(1-simNSPS) + 0.23*efwhr ;
-    //return  0.6*(x_error + y_error) + 0.19*(1-simNSPS) + 0.19*efwhr +  0.01*weightxy.first + 0.01*weightxy.second ;
+    //return  0.65*(x_error + y_error) + 0.12*(1-simNSPS) + 0.13*efwhr + 0.1*std::abs(img.circle-temp.circle);
 }
 
 /* predict which alphaberts it is  */
@@ -885,6 +887,7 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     // get feature
     Features f = feature_extractor_projectionmatch(img.image,img.properties,"");
     f = feature_extractor_9Sampling(img.image,img.properties,f);
+    //feature_circle(img.image,img.properties,f);
 
     double minv = std::numeric_limits<double>::max();            // stores max similarity
     std::string current="*";    // stores char which matches to the max similarity
@@ -896,14 +899,6 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
             current = temp.label;
         }
     }
-    /*/
-    for(int i=0;i<templatedata.size();++i){
-        double x = similarity(f,templatedata[i]);
-        if( (x) <= (minv) ){
-            minv =x;
-            current = templatedata[i].label;
-        }
-    }/*/
     
     // return data
     return current;

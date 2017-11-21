@@ -69,23 +69,36 @@ inline WLITERATOR chooseSmallOne(const WLITERATOR&a,const WLITERATOR&b,const WLI
 
 
 /* return a list of word with 1 alphberts differs from original word */
-inline const WORDLIST edit1(const std::string& word){
-    WORDLIST wl;
-    std::string newword;
+inline const std::string edit1(const std::string& word){
     std::string ww = "";
+    WLITERATOR it,minit = wordlist.end();
     //generate alphberts replace
     for(int j=0;j<word.length();++j){
         for(auto&a : alphberts){
             ww = word;
-            wl.push_back( ww.replace(j,1,1,a) );
+            ww.replace(j,1,1,a);
+            it = std::find(wordlist.begin(), wordlist.end(), ww);    
+            if( it != wordlist.end() ){
+                minit = chooseSmallOne(it,minit,wordlist.begin());
+            }
         }
     }
-    // generate delete one alphberts
+    if(minit != wordlist.end()){
+        return *minit;
+    }
+    // start delete alphaberts
     for(int i=0;i<word.length();++i){
         ww = word;
-        wl.push_back( ww.erase(i,1) );
-    }    
-    return wl;
+        ww.erase(i,1);
+        it = std::find(wordlist.begin(), wordlist.end(), ww);    
+        if( it != wordlist.end() ){
+            minit = chooseSmallOne(it,minit,wordlist.begin());
+        }
+    }
+    if(minit != wordlist.end()){
+        return *minit;
+    } 
+    return word;
 }
 
 inline const std::string edit2(const std::string& word){
@@ -120,25 +133,7 @@ inline const std::string suggest(const std::string& str){
     if(find(str)){
         return str;
     }
-    WORDLIST wl1 = edit1(str);
-
-    WLITERATOR it;
-    WLITERATOR minit = wordlist.end();
-    //search in wl1
-    for(WLITERATOR i=wl1.begin();i<wl1.end();++i){
-        it = std::find(wordlist.begin(), wordlist.end(), *i);    
-        if( it != wordlist.end() ){
-            minit = chooseSmallOne(it,minit,wordlist.begin());
-        }
-    }
-    if( minit != wordlist.end() ){
-        return *minit;
-    }
-
-    //return  edit2(str);
-
-    //no suggest
-    return str;
+    return edit1(str);
 }
 
 //
