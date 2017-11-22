@@ -719,6 +719,25 @@ const double cosine(std::vector<int> v1,std::vector<int> v2){
 } 
 
 
+/* this function can resize an image to the size of template */
+const IMAGE resizeToTemplate(IMAGE& img, ImageData& id,const Features& temp){
+    // we use this formula: 
+    //          dest[dx,dy] = src[dx*src_width/dest_width,dy*src_height/dest_height]
+    //          dest[dx,dy] = src[dx*px,dy*py]
+    double px = id.width/temp.width;
+    double py = id.height/temp.height;
+    IMAGE newimg = new COLUMN[temp.height];
+    for(int i=0;i<temp.height;++i){
+        newimg[i] = new PIXEL[temp.width];
+        for(int j=0;j<temp.width;++j){
+            newimg[i][j] = new CHANNEL[1];
+            newimg[i][j][0] = img[int(i*py)][int(j*px)][0];
+        }
+    }
+    return newimg;
+}
+
+
 /* parse feature structure to string */
 /* feature format: x1,x2@y1,y2@scale@height,width@label@9points#next_feature_section@xweight,vertial_ratio */
 std::string feature2string(Features f){
@@ -868,17 +887,27 @@ inline const double similarity(const Features img,const Features temp){
     //return  0.65*(x_error + y_error) + 0.12*(1-simNSPS) + 0.13*efwhr + 0.1*std::abs(img.circle-temp.circle);
 }
 
+
+void exportImage(ImagePack & imp2d,std::string filename){
+    ImagePack2D d2line = depixelize(imp2d.image,imp2d.properties);
+    save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/" + filename);
+}
+
 /* predict which alphaberts it is  */
 std::string predictAlphberts(ImagePack img,const std::vector<Features> &templatedata){
     // get feature
-    Features f = feature_extractor_projectionmatch(img.image,img.properties,"");
-    f = feature_extractor_9Sampling(img.image,img.properties,f);
+
     //feature_circle(img.image,img.properties,f);
 
     double minv = std::numeric_limits<double>::max();            // stores max similarity
     std::string current="*";    // stores char which matches to the max similarity
     // loop computing cos with the template data
     for(auto& temp: templatedata){
+        IMAGE imagex =resizeToTemplate(img.image,img.properties,temp);
+        ImageData id = ImageData{temp.width,temp.height,1};
+        ImagePack s= ImagePack{imagex,id};
+        Features f = feature_extractor_projectionmatch(imagex,id,"");
+        f = feature_extractor_9Sampling(imagex,id,f);
         double x = similarity(f,temp);
         if( x <= minv ){
             minv =x;
@@ -890,10 +919,6 @@ std::string predictAlphberts(ImagePack img,const std::vector<Features> &template
     return current;
 }
 
-void exportImage(ImagePack & imp2d,std::string filename){
-    ImagePack2D d2line = depixelize(imp2d.image,imp2d.properties);
-    save_string( numpylize( nullptr ,d2line.properties, d2line.image ) ,"cache/" + filename);
-}
 
 /* ==============================================Extract text fucntion here================================== */
 

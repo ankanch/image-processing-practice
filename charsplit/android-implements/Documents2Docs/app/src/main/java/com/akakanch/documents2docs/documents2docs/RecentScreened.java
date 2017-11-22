@@ -29,6 +29,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.support.design.widget.FloatingActionButton;
@@ -39,6 +40,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
 import android.widget.PopupMenu;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
@@ -63,6 +66,11 @@ public class RecentScreened extends AppCompatActivity {
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_PICK_IMAGE = 2;
 
+    // configs
+    private WriteConfig Config;
+    private float compress_rate = 0.2f;
+
+    // data
     private ListView lvrecent;
     private ArrayList<RecentItem> al_recent = new ArrayList<RecentItem>();
     private ArrayAdapter<RecentItem> aa_recent;
@@ -103,6 +111,14 @@ public class RecentScreened extends AppCompatActivity {
         db = dbhelper.getWritableDatabase();
         new LoadAllRecentInBackground().execute(db);
         setListenerOnListView(lvrecent);
+        Config = new WriteConfig(getApplicationContext());
+        String compressrate = Config.read("COMPRESSRATE");
+        if(compressrate.length() != 0){
+            compress_rate = Float.parseFloat(compressrate);
+        }else{
+            Config.save("COMPRESSRATE",String.valueOf(compressrate));
+        }
+        Log.v("Compress_rate=", String.valueOf(compress_rate));
     }
 
     @Override
@@ -121,7 +137,46 @@ public class RecentScreened extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            LayoutInflater li = LayoutInflater.from(CurActivitycontext);
+            final View settingsDlgView = li.inflate(R.layout.settings_layout, null);
+            final AlertDialog.Builder builder = new AlertDialog.Builder(CurActivitycontext);
+            builder.setView(settingsDlgView);
+            final AlertDialog dlg = builder.show();
+            dlg.setCanceledOnTouchOutside(false);
+            ((Button)settingsDlgView.findViewById(R.id.button_settings_exit)).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    dlg.dismiss();
+                }
+            });
+            final SeekBar skCompressRate = (SeekBar)settingsDlgView.findViewById(R.id.seekBar_settings_compressrate);
+            final TextView tvCompressRate = (TextView)settingsDlgView.findViewById(R.id.textView_settings_compressratwe);
+            tvCompressRate.setText(String.valueOf(  Math.round(compress_rate*100f) )  + "%");
+            skCompressRate.setProgress(Math.round(compress_rate*100f) );
+            skCompressRate.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                    tvCompressRate.setText(String.valueOf(skCompressRate.getProgress()) + "%");
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    if(skCompressRate.getProgress() < 1){
+                        skCompressRate.setProgress(1);
+                    }
+                    compress_rate = skCompressRate.getProgress()/100f;
+                    Config.save("COMPRESSRATE",String.valueOf(compress_rate));
+                    Log.v("Compress_rate=", String.valueOf(compress_rate));
+                }
+            });
             return true;
+        }else if(id == R.id.action_multiselection){
+
         }
 
         return super.onOptionsItemSelected(item);
@@ -152,27 +207,25 @@ public class RecentScreened extends AppCompatActivity {
             if(requestCode == REQUEST_IMAGE_CAPTURE ) {
                 Bitmap imageBitmap = getPicture( last_taken_pictures_abpath );
                 imageBitmap = compressAsJPG(imageBitmap);
-                imageBitmap = scaleBitmap(imageBitmap,0.4f);
+                imageBitmap = scaleBitmap(imageBitmap,compress_rate);
                 ThumbnailActivity.target_image = imageBitmap;
                 Intent confirm_screen = new Intent(getApplicationContext(), ThumbnailActivity.class);
                 //add data to recentscreened
                 RecentItem ri = new RecentItem(last_taken_pictures_name,"",imageBitmap,last_taken_pictures_abpath);
-                dbhelper.insertRecentItem(db,ri);
-                aa_recent.insert(ri,0);
+                ThumbnailActivity.aa_recent = aa_recent;
+                ThumbnailActivity.ri = ri;
                 // goto process activity
                 startActivity(confirm_screen);
             }else if( requestCode == REQUEST_PICK_IMAGE ){
                 Toast.makeText(this,"open image" + data.getData(), Toast.LENGTH_LONG).show();
                 Bitmap bp = getPicture(data.getData());
-                //bp = compressAsJPG(bp);
+                bp = scaleBitmap(bp,compress_rate);
                 ThumbnailActivity.target_image = bp;
                 Intent confirm_screen = new Intent(getApplicationContext(), ThumbnailActivity.class);
                 //add data to recentscreened
                 String furi = data.getData().toString();
                 File f = new File(furi);
                 RecentItem ri = new RecentItem(f.getName() ,"",bp,furi);
-                //dbhelper.insertRecentItem(db,ri);
-                //aa_recent.insert(ri,0);
                 ThumbnailActivity.ri = ri;
                 ThumbnailActivity.aa_recent = aa_recent;
                 // goto process activity

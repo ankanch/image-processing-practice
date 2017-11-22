@@ -11,6 +11,7 @@ import android.support.annotation.IntegerRes;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -23,12 +24,13 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-public class ThumbnailActivity extends AppCompatActivity {
+public class ThumbnailActivity extends AppCompatActivity implements IOCRCallBack {
 
     private ImageView iv_thumbnail;
     private String result;
     private  ArrayList<Bitmap> p;
     private Context context;
+    private Button btnGetFromAPI;
 
     public static Bitmap target_image;      // target image to process
     private DatabaseHelper dbHelper;  //sotres database help object
@@ -71,7 +73,28 @@ public class ThumbnailActivity extends AppCompatActivity {
             public void onClick(View view) {
                 new processImage().execute(target_image);
             }});
+        final IOCRCallBack iocallback = this;
+        btnGetFromAPI = (Button)findViewById(R.id.button_thumbnail_getbyapi);
+        btnGetFromAPI.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                OCRAsyncTask oCRAsyncTask = new OCRAsyncTask(ThumbnailActivity.this, target_image,  "eng",iocallback);
+                oCRAsyncTask.execute();
+            }
+        });
     }
+
+    @Override
+    public void getOCRCallBackResult(String response) {
+        TextOutActivity.textout = response;
+        ri.data = response;
+        dbHelper.insertRecentItem(db,ri);
+        aa_recent.insert(ri,0);
+        Intent textout_screen = new Intent(getApplicationContext(), TextOutActivity.class);
+        startActivity(textout_screen);
+    }
+
+
 
     //获取识别出的字符
     private class processImage extends AsyncTask<Bitmap, Void, String> {
@@ -106,7 +129,7 @@ public class ThumbnailActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            loading.setMessage("处理中...");
+            loading.setMessage("Processing...");
             loading.show();
             loading.setCancelable(false);
             loading.setCanceledOnTouchOutside(false);
@@ -141,7 +164,7 @@ public class ThumbnailActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            loading.setMessage("处理中...");
+            loading.setMessage("Processing...");
             loading.show();
             loading.setCancelable(false);
             loading.setCanceledOnTouchOutside(false);
@@ -176,7 +199,7 @@ public class ThumbnailActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            loading.setMessage("处理中...");
+            loading.setMessage("Processing...");
             loading.show();
             loading.setCancelable(false);
             loading.setCanceledOnTouchOutside(false);
